@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Beleggen • Mini Planner+</title>
+  <meta name="theme-color" content="#0b0f14" />
+  <style>
+    :root{color-scheme:dark;}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0b0f14;color:#e8eef6}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    h1{margin:0 0 10px;font-size:18px}
+    .grid{display:grid;gap:12px;grid-template-columns:420px 1fr}
+    .card{background:#121a24;border:1px solid #223043;border-radius:16px;padding:14px}
+    .inputs{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+    .inputs .full{grid-column:1/-1}
+    label{display:block;font-size:12px;opacity:.85;margin:2px 0 6px}
+    input, select{width:100%;box-sizing:border-box;padding:12px 12px;border-radius:12px;border:1px solid #2a3a52;background:#0b111a;color:#e8eef6;font-size:15px}
+    button{width:100%;padding:12px;border-radius:12px;border:0;background:#2b7cff;color:#fff;font-weight:800;cursor:pointer}
+    button:active{transform:scale(.99)}
+    .kpis{display:grid;gap:10px;grid-template-columns:1fr 1fr 1fr}
+    .kpi{background:#0b111a;border:1px solid #223043;border-radius:14px;padding:12px}
+    .kpi .t{font-size:12px;opacity:.85}
+    .kpi .v{font-size:18px;font-weight:900;margin-top:4px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:10px 8px;border-bottom:1px solid #223043;text-align:right}
+    th{font-size:12px;opacity:.85}
+    td:first-child,th:first-child{text-align:left}
+    .pill{display:inline-block;padding:5px 10px;border-radius:999px;background:#0b111a;border:1px solid #223043;font-size:12px;opacity:.9}
+    .muted{opacity:.8;font-size:12px;line-height:1.35}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:10px 12px;border-radius:999px;border:1px solid #223043;background:#0b111a;color:#e8eef6;font-weight:800;cursor:pointer}
+    .chip:active{transform:scale(.99)}
+    .danger{color:#ffcf66}
+    .timeline{display:grid;gap:10px;margin:12px 0 2px}
+    .step{background:#0b111a;border:1px solid #223043;border-radius:14px;padding:10px}
+    .step .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .step .name{font-weight:900}
+    .step .meta{opacity:.85;font-size:12px}
+    .bar{height:10px;border-radius:999px;background:#121a24;border:1px solid #223043;margin-top:10px;overflow:hidden}
+    .fill{height:100%;width:0%}
+    canvas{width:100%;height:260px;background:#0b111a;border:1px solid #223043;border-radius:14px}
+    .sectionTitle{margin:14px 0 8px;font-size:14px}
+    @media (max-width:980px){
+      .grid{grid-template-columns:1fr}
+      .kpis{grid-template-columns:1fr}
+      canvas{height:240px}
+    }
+  </style>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Beleggen">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+</head>
+<body>
+  <div class="wrap">
+    <h1>📈 Beleggen • Mini Planner+</h1>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="pill">Supersnel invullen</span>
+          <span class="pill">Maandelijks compounding</span>
+        </div>
+
+        <div class="inputs">
+          <div>
+            <label>Start (€)</label>
+            <input id="start" type="number" step="100" value="5000" />
+          </div>
+          <div>
+            <label>Inleg p/m (€)</label>
+            <input id="monthly" type="number" step="25" value="325" />
+          </div>
+          <div>
+            <label>Rendement p/j (%)</label>
+            <input id="r" type="number" step="0.1" value="5" />
+          </div>
+          <div>
+            <label>Inflatie / inleggroei p/j (%)</label>
+            <input id="infl" type="number" step="0.1" value="2" />
+          </div>
+          <div class="full">
+            <label>Looptijd (jaren)</label>
+            <input id="years" type="number" step="1" value="30" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button id="calc">Bereken</button>
+          <button id="share" class="chip" style="flex:1">Deel/opslaan als link</button>
+        </div>
+
+        <h3 class="sectionTitle">🎯 Doel-modus</h3>
+        <div class="inputs">
+          <div>
+            <label>Doelbedrag (€)</label>
+            <input id="goalAmount" type="number" step="500" value="10000" />
+          </div>
+          <div>
+            <label>Deadline (maanden)</label>
+            <input id="goalMonths" type="number" step="1" value="10.5" />
+          </div>
+          <div class="full">
+            <label>Wat wil je laten berekenen?</label>
+            <select id="goalMode">
+              <option value="monthly">Benodigde maandinleg</option>
+              <option value="lump">Benodigde eenmalige storting (bovenop huidige maandinleg)</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="solveGoal" class="chip" style="flex:1">Bereken doel</button>
+        </div>
+
+                <p class="muted" id="goalResult" style="margin:10px 0 0; font-weight:800"></p>
+
+<p class="muted" style="margin:10px 0 0">
+          Tip: doel-modus is ideaal voor “€10k in 10,5 maanden”-vragen.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="pill">Resultaten</span>
+          <span class="pill" id="mode">nominaal</span>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="t">Totaal vermogen</div>
+            <div class="v" id="end">–</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Inleg (start + stortingen)</div>
+            <div class="v" id="inleg">–</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Rendement (deel)</div>
+            <div class="v" id="rendement">–</div>
+          </div>
+        </div>
+
+        <h3 class="sectionTitle">📉 Grafiek (totaal vs inleg)</h3>
+        <canvas id="chart" width="1100" height="260"></canvas>
+
+        <h3 class="sectionTitle">🏁 Kantelpunt timeline</h3>
+        <div id="timeline" class="timeline"></div>
+
+        <h3 class="sectionTitle">🧾 5-jaars overzicht</h3>
+        <div style="overflow-x:auto"><table id="table"></table></div>
+
+        <p class="muted danger" id="note"></p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const fmt = (n) => {
+    if (!isFinite(n)) return "–";
+    return new Intl.NumberFormat("nl-NL", { style:"currency", currency:"EUR", maximumFractionDigits:0 }).format(n);
+  };
+
+  const fmtCompact = (n) => {
+    if (!isFinite(n)) return "–";
+    const abs = Math.abs(n);
+    if (abs >= 1_000_000) return (n/1_000_000).toFixed(2).replace(".", ",") + "M";
+    if (abs >= 1_000) return (n/1_000).toFixed(1).replace(".", ",") + "k";
+    return Math.round(n).toString();
+  };
+
+  function simulate({start, monthly0, rYear, inflYear, years, lump=0, overrideMonthly=null, monthsOverride=null}) {
+    const months = monthsOverride !== null ? Math.max(0, Math.floor(monthsOverride)) : Math.max(0, Math.floor(years * 12));
+    const rm = Math.pow(1 + rYear, 1/12) - 1;
+    const im = Math.pow(1 + inflYear, 1/12) - 1;
+
+    let value = start + lump;
+    let totalContrib = lump;
+
+    const values = [value];
+    const inlegLine = [start + lump];
+    let inlegCumul = start + lump;
+
+    for (let m = 1; m <= months; m++) {
+      const baseMonthly = overrideMonthly !== null ? overrideMonthly : monthly0;
+      const monthly = baseMonthly * Math.pow(1 + im, m-1);
+
+      value = value * (1 + rm) + monthly;
+
+      totalContrib += monthly;
+      inlegCumul += monthly;
+
+      values.push(value);
+      inlegLine.push(inlegCumul);
+    }
+
+    return { months, rm, im, values, inlegLine, totalContrib };
+  }
+
+  function build5YearTable(values, years){
+    const rows = [];
+    for (let y = 0; y <= years; y += 5){
+      const m = y * 12;
+      rows.push({ year: y, value: values[Math.min(m, values.length-1)] });
+    }
+    return rows;
+  }
+
+  function getInputs(){
+    return {
+      start: Number(document.getElementById("start").value || 0),
+      monthly0: Number(document.getElementById("monthly").value || 0),
+      rYear: Number(document.getElementById("r").value || 0) / 100,
+      inflYear: Number(document.getElementById("infl").value || 0) / 100,
+      years: Number(document.getElementById("years").value || 0),
+    };
+  }
+
+  function setInputsFromQuery(){
+    const q = new URLSearchParams(location.search);
+    const map = { start:"start", m:"monthly", r:"r", i:"infl", y:"years" };
+    for (const [k, id] of Object.entries(map)){
+      if (q.has(k)) document.getElementById(id).value = q.get(k);
+    }
+  }
+
+  function makeShareLink(){
+    const {start, monthly0, rYear, inflYear, years} = getInputs();
+    const q = new URLSearchParams();
+    q.set("start", Math.round(start));
+    q.set("m", Math.round(monthly0));
+    q.set("r", (rYear*100).toFixed(2));
+    q.set("i", (inflYear*100).toFixed(2));
+    q.set("y", Math.round(years));
+    return location.origin + location.pathname + "?" + q.toString();
+  }
+
+  async function share(){
+    const url = makeShareLink();
+    try{
+      if (navigator.share){
+        await navigator.share({ title:"Beleggingsplanner", text:"Mijn beleggingsscenario", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        alert("Link gekopieerd naar klembord!");
+      }
+    } catch(e){
+      try{
+        await navigator.clipboard.writeText(url);
+        alert("Link gekopieerd naar klembord!");
+      } catch(_){
+        alert(url);
+      }
+    }
+  }
+
+  function drawChart(canvas, totalValues, inlegValues){
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0,0,W,H);
+
+    const padL = 44, padR = 16, padT = 16, padB = 30;
+    const w = W - padL - padR;
+    const h = H - padT - padB;
+
+    const n = totalValues.length;
+    const maxV = Math.max(...totalValues, ...inlegValues) * 1.05;
+    const minV = 0;
+
+    const x = (i) => padL + (i/(n-1)) * w;
+    const y = (v) => padT + (1 - (v-minV)/(maxV-minV)) * h;
+
+    ctx.strokeStyle = "#223043";
+    ctx.lineWidth = 1;
+    for (let k=0;k<=4;k++){
+      const yy = padT + (k/4)*h;
+      ctx.beginPath();
+      ctx.moveTo(padL, yy);
+      ctx.lineTo(padL+w, yy);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "rgba(232,238,246,.75)";
+    ctx.font = "12px system-ui";
+    for (let k=0;k<=4;k++){
+      const v = maxV * (1 - k/4);
+      const yy = padT + (k/4)*h;
+      ctx.fillText(fmtCompact(v), 6, yy+4);
+    }
+
+    ctx.strokeStyle = "rgba(232,238,246,.55)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i=0;i<n;i++){
+      const xx = x(i);
+      const yy = y(inlegValues[i]);
+      if (i===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#2b7cff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i=0;i<n;i++){
+      const xx = x(i);
+      const yy = y(totalValues[i]);
+      if (i===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(232,238,246,.9)";
+    ctx.font = "12px system-ui";
+    ctx.fillText("Inleg", padL, H-10);
+    ctx.fillStyle = "#2b7cff";
+    ctx.fillText("Totaal", padL+60, H-10);
+  }
+
+  function monthToText(m){
+    if (m === null) return "niet gehaald";
+    const y = Math.floor(m / 12);
+    const mo = m % 12;
+    if (y === 0) return `${mo} mnd`;
+    if (mo === 0) return `${y} jaar`;
+    return `${y} jaar ${mo} mnd`;
+  }
+
+  function findMonth(values, target){
+    for (let i = 0; i < values.length; i++){
+      if (values[i] >= target) return i;
+    }
+    return null;
+  }
+
+  function renderTimeline(sim, currentNow){
+    const steps = [
+      { name:"€7k", target:7000, note:"Gedragsmijlpaal" },
+      { name:"€15k", target:15000, note:"Motor aan" },
+      { name:"€30k", target:30000, note:"Stabiliteit" },
+      { name:"€70k", target:70000, note:"Kantelpunt" },
+      { name:"€125k", target:125000, note:"Stop op 65 realistisch" },
+    ];
+
+    const container = document.getElementById("timeline");
+    container.innerHTML = "";
+
+    for (const s of steps){
+      const m = findMonth(sim.values, s.target);     // wanneer je het haalt met jouw plan
+      const done = currentNow >= s.target;           // alleen aanvinken als huidig kapitaal al boven doel zit
+      const pct = Math.max(0, Math.min(100, (currentNow / s.target) * 100));
+
+      const div = document.createElement("div");
+      div.className = "step";
+      div.innerHTML = `
+        <div class="top">
+          <div class="name">${done ? "✅ " : ""}${s.name}</div>
+          <div class="meta">${done ? "gehaald" : "na " + monthToText(m)}</div>
+        </div>
+        <div class="meta" style="margin-top:6px">${s.note}</div>
+        <div class="bar"><div class="fill" style="width:${pct}%; background:${done ? "#a7ffb2" : "#2b7cff"}"></div></div>
+      `;
+      container.appendChild(div);
+    }
+  }
+
+  function render(){
+    const note = document.getElementById("note");
+    note.textContent = "";
+
+    const {start, monthly0, rYear, inflYear, years} = getInputs();
+    if (start < 0 || monthly0 < 0 || years <= 0){
+      note.textContent = "Vul geldige waarden in (geen negatieve bedragen, looptijd > 0).";
+      return;
+    }
+
+    const sim = simulate({start, monthly0, rYear, inflYear, years});
+    const end = sim.values[sim.values.length - 1];
+    const contrib = sim.totalContrib;
+
+    document.getElementById("end").textContent = fmt(end);
+
+    const inlegTotal = start + contrib;
+    const rendementDeel = end - inlegTotal;
+
+    document.getElementById("inleg").textContent = fmt(inlegTotal);
+    document.getElementById("rendement").textContent = fmt(rendementDeel);
+
+    drawChart(document.getElementById("chart"), sim.values, sim.inlegLine);
+    renderTimeline(sim, start);
+
+    const rows = [];
+    for (let y = 0; y <= Math.floor(years); y += 5){
+      const idx = Math.min(y * 12, sim.values.length-1);
+      const totaal = sim.values[idx];
+      const inleg = sim.inlegLine[idx];
+      const rend = totaal - inleg;
+      rows.push({ year:y, totaal, inleg, rend });
+    }
+
+    let html = `<tr><th>Jaar</th><th>Totaal</th><th>Inleg</th><th>Rendement</th></tr>`;
+    for (const r of rows){
+      html += `<tr><td>${r.year}</td><td>${fmt(r.totaal)}</td><td>${fmt(r.inleg)}</td><td>${fmt(r.rend)}</td></tr>`;
+    }
+    document.getElementById("table").innerHTML = html;
+
+    if (inflYear > 0.06){
+      note.textContent = "Let op: je inflatie/inleggroei is vrij hoog. Dat maakt je eindbedrag veel groter, maar ook je maandinleg later veel zwaarder.";
+    }
+  }
+
+  function solveGoal(){
+    const note = document.getElementById("note");
+    const goalResult = document.getElementById("goalResult");
+    note.textContent = "";
+    goalResult.textContent = "";
+
+    const {start, monthly0, rYear, inflYear} = getInputs();
+    const goalAmount = Number(document.getElementById("goalAmount").value || 0);
+    const goalMonthsRaw = Number(document.getElementById("goalMonths").value || 0);
+    const goalMonths = Math.max(0, Math.floor(goalMonthsRaw));
+    const goalMode = document.getElementById("goalMode").value;
+
+    if (goalAmount <= 0 || goalMonths <= 0){
+      goalResult.textContent = "Vul een doelbedrag en deadline (maanden) in.";
+      return;
+    }
+
+    if (goalMode === "monthly"){
+      let lo = 0, hi = 8000;
+      for (let iter=0; iter<44; iter++){
+        const mid = (lo+hi)/2;
+        const sim = simulate({start, monthly0, rYear, inflYear, years:1, overrideMonthly:mid, monthsOverride:goalMonths});
+        const end = sim.values[sim.values.length-1];
+        if (end >= goalAmount) hi = mid; else lo = mid;
+      }
+      const needed = Math.ceil(hi/5)*5;
+      goalResult.textContent = `🎯 Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer ${fmt(needed)} per maand nodig.`;
+      return;
+    }
+
+    if (goalMode === "lump"){
+      let lo = 0, hi = 300000;
+      for (let iter=0; iter<44; iter++){
+        const mid = (lo+hi)/2;
+        const sim = simulate({start, monthly0, rYear, inflYear, years:1, lump:mid, monthsOverride:goalMonths});
+        const end = sim.values[sim.values.length-1];
+        if (end >= goalAmount) hi = mid; else lo = mid;
+      }
+      const needed = Math.ceil(hi/10)*10;
+      goalResult.textContent = `🎯 Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer een eenmalige storting van ${fmt(needed)} nodig (bovenop ${fmt(monthly0)} p/m).`;
+      return;
+    }
+  }
+
+  document.getElementById("calc").addEventListener("click", render);
+  document.getElementById("share").addEventListener("click", share);
+  document.getElementById("solveGoal").addEventListener("click", solveGoal);
+  window.addEventListener("load", () => { setInputsFromQuery(); render(); });
+</script>
+
+<script>
+  // PWA: offline + installable
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
