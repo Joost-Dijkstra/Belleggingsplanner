@@ -18,7 +18,8 @@
     input, select{width:100%;box-sizing:border-box;padding:12px 12px;border-radius:12px;border:1px solid #2a3a52;background:#0b111a;color:#e8eef6;font-size:15px}
     button{width:100%;padding:12px;border-radius:12px;border:0;background:#2b7cff;color:#fff;font-weight:800;cursor:pointer}
     button:active{transform:scale(.99)}
-    .kpis{display:grid;gap:10px;grid-template-columns:1fr 1fr 1fr}
+    .kpis{display:grid;gap:10px;grid-template-columns:repeat(3, minmax(0, 1fr))}
+    .kpis.four{grid-template-columns:repeat(4, minmax(0, 1fr))}
     .kpi{background:#0b111a;border:1px solid #223043;border-radius:14px;padding:12px}
     .kpi .t{font-size:12px;opacity:.85}
     .kpi .v{font-size:18px;font-weight:900;margin-top:4px}
@@ -44,7 +45,12 @@
     @media (max-width:980px){
       .grid{grid-template-columns:1fr}
       .kpis{grid-template-columns:1fr}
+      .kpis.four{grid-template-columns:repeat(2, minmax(0, 1fr))}
       canvas{height:240px}
+    }
+    @media (max-width:560px){
+      .kpis.four{grid-template-columns:repeat(4, minmax(0, 1fr))}
+      .kpi .v{font-size:15px}
     }
   </style>
 
@@ -54,7 +60,6 @@
   <meta name="apple-mobile-web-app-title" content="Beleggen">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-
 </head>
 <body>
   <div class="wrap">
@@ -117,9 +122,8 @@
           <button id="solveGoal" class="chip" style="flex:1">Bereken doel</button>
         </div>
 
-                <p class="muted" id="goalResult" style="margin:10px 0 0; font-weight:800"></p>
-
-<p class="muted" style="margin:10px 0 0">
+        <p class="muted" id="goalResult" style="margin:10px 0 0; font-weight:800"></p>
+        <p class="muted" style="margin:10px 0 0">
           Tip: doel-modus is ideaal voor “€10k in 10,5 maanden”-vragen.
         </p>
       </div>
@@ -145,6 +149,26 @@
           </div>
         </div>
 
+        <h3 class="sectionTitle">Gemiddeld rendement op je huidige bedrag</h3>
+        <div class="kpis four">
+          <div class="kpi">
+            <div class="t">Per dag</div>
+            <div class="v" id="yieldDay">–</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Per week</div>
+            <div class="v" id="yieldWeek">–</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Per maand</div>
+            <div class="v" id="yieldMonth">–</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Per jaar</div>
+            <div class="v" id="yieldYear">–</div>
+          </div>
+        </div>
+
         <h3 class="sectionTitle">📉 Grafiek (totaal vs inleg)</h3>
         <canvas id="chart" width="1100" height="260"></canvas>
 
@@ -160,6 +184,8 @@
   </div>
 
 <script>
+  const STORAGE_KEY = "beleggingsplanner-inputs-v1";
+
   const fmt = (n) => {
     if (!isFinite(n)) return "–";
     return new Intl.NumberFormat("nl-NL", { style:"currency", currency:"EUR", maximumFractionDigits:0 }).format(n);
@@ -168,15 +194,15 @@
   const fmtCompact = (n) => {
     if (!isFinite(n)) return "–";
     const abs = Math.abs(n);
-    if (abs >= 1_000_000) return (n/1_000_000).toFixed(2).replace(".", ",") + "M";
-    if (abs >= 1_000) return (n/1_000).toFixed(1).replace(".", ",") + "k";
+    if (abs >= 1_000_000) return (n / 1_000_000).toFixed(2).replace(".", ",") + "M";
+    if (abs >= 1_000) return (n / 1_000).toFixed(1).replace(".", ",") + "k";
     return Math.round(n).toString();
   };
 
-  function simulate({start, monthly0, rYear, inflYear, years, lump=0, overrideMonthly=null, monthsOverride=null}) {
+  function simulate({start, monthly0, rYear, inflYear, years, lump = 0, overrideMonthly = null, monthsOverride = null}) {
     const months = monthsOverride !== null ? Math.max(0, Math.floor(monthsOverride)) : Math.max(0, Math.floor(years * 12));
-    const rm = Math.pow(1 + rYear, 1/12) - 1;
-    const im = Math.pow(1 + inflYear, 1/12) - 1;
+    const rm = Math.pow(1 + rYear, 1 / 12) - 1;
+    const im = Math.pow(1 + inflYear, 1 / 12) - 1;
 
     let value = start + lump;
     let totalContrib = lump;
@@ -187,7 +213,7 @@
 
     for (let m = 1; m <= months; m++) {
       const baseMonthly = overrideMonthly !== null ? overrideMonthly : monthly0;
-      const monthly = baseMonthly * Math.pow(1 + im, m-1);
+      const monthly = baseMonthly * Math.pow(1 + im, m - 1);
 
       value = value * (1 + rm) + monthly;
 
@@ -198,19 +224,10 @@
       inlegLine.push(inlegCumul);
     }
 
-    return { months, rm, im, values, inlegLine, totalContrib };
+    return { months, values, inlegLine, totalContrib };
   }
 
-  function build5YearTable(values, years){
-    const rows = [];
-    for (let y = 0; y <= years; y += 5){
-      const m = y * 12;
-      rows.push({ year: y, value: values[Math.min(m, values.length-1)] });
-    }
-    return rows;
-  }
-
-  function getInputs(){
+  function getInputs() {
     return {
       start: Number(document.getElementById("start").value || 0),
       monthly0: Number(document.getElementById("monthly").value || 0),
@@ -220,50 +237,96 @@
     };
   }
 
-  function setInputsFromQuery(){
+  function getGoalInputs() {
+    return {
+      goalAmount: Number(document.getElementById("goalAmount").value || 0),
+      goalMonths: Number(document.getElementById("goalMonths").value || 0),
+      goalMode: document.getElementById("goalMode").value,
+    };
+  }
+
+  function saveInputs() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...getInputs(),
+        ...getGoalInputs(),
+      }));
+    } catch (_) {}
+  }
+
+  function restoreInputs() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      const saved = JSON.parse(raw);
+      const fieldValues = {
+        start: saved.start,
+        monthly: saved.monthly0,
+        r: saved.rYear != null ? saved.rYear * 100 : undefined,
+        infl: saved.inflYear != null ? saved.inflYear * 100 : undefined,
+        years: saved.years,
+        goalAmount: saved.goalAmount,
+        goalMonths: saved.goalMonths,
+        goalMode: saved.goalMode,
+      };
+
+      for (const [id, value] of Object.entries(fieldValues)) {
+        if (value === undefined || value === null || value === "") continue;
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+      }
+    } catch (_) {}
+  }
+
+  function setInputsFromQuery() {
     const q = new URLSearchParams(location.search);
     const map = { start:"start", m:"monthly", r:"r", i:"infl", y:"years" };
-    for (const [k, id] of Object.entries(map)){
+    for (const [k, id] of Object.entries(map)) {
       if (q.has(k)) document.getElementById(id).value = q.get(k);
     }
   }
 
-  function makeShareLink(){
+  function makeShareLink() {
     const {start, monthly0, rYear, inflYear, years} = getInputs();
     const q = new URLSearchParams();
     q.set("start", Math.round(start));
     q.set("m", Math.round(monthly0));
-    q.set("r", (rYear*100).toFixed(2));
-    q.set("i", (inflYear*100).toFixed(2));
+    q.set("r", (rYear * 100).toFixed(2));
+    q.set("i", (inflYear * 100).toFixed(2));
     q.set("y", Math.round(years));
     return location.origin + location.pathname + "?" + q.toString();
   }
 
-  async function share(){
+  async function share() {
     const url = makeShareLink();
-    try{
-      if (navigator.share){
+    try {
+      if (navigator.share) {
         await navigator.share({ title:"Beleggingsplanner", text:"Mijn beleggingsscenario", url });
       } else {
         await navigator.clipboard.writeText(url);
         alert("Link gekopieerd naar klembord!");
       }
-    } catch(e){
-      try{
+    } catch (e) {
+      try {
         await navigator.clipboard.writeText(url);
         alert("Link gekopieerd naar klembord!");
-      } catch(_){
+      } catch (_) {
         alert(url);
       }
     }
   }
 
-  function drawChart(canvas, totalValues, inlegValues){
+  function drawChart(canvas, totalValues, inlegValues) {
     const ctx = canvas.getContext("2d");
-    const W = canvas.width, H = canvas.height;
-    ctx.clearRect(0,0,W,H);
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
 
-    const padL = 44, padR = 16, padT = 16, padB = 30;
+    const padL = 44;
+    const padR = 16;
+    const padT = 16;
+    const padB = 30;
     const w = W - padL - padR;
     const h = H - padT - padB;
 
@@ -271,55 +334,55 @@
     const maxV = Math.max(...totalValues, ...inlegValues) * 1.05;
     const minV = 0;
 
-    const x = (i) => padL + (i/(n-1)) * w;
-    const y = (v) => padT + (1 - (v-minV)/(maxV-minV)) * h;
+    const x = (i) => padL + (i / (n - 1)) * w;
+    const y = (v) => padT + (1 - (v - minV) / (maxV - minV)) * h;
 
     ctx.strokeStyle = "#223043";
     ctx.lineWidth = 1;
-    for (let k=0;k<=4;k++){
-      const yy = padT + (k/4)*h;
+    for (let k = 0; k <= 4; k++) {
+      const yy = padT + (k / 4) * h;
       ctx.beginPath();
       ctx.moveTo(padL, yy);
-      ctx.lineTo(padL+w, yy);
+      ctx.lineTo(padL + w, yy);
       ctx.stroke();
     }
 
     ctx.fillStyle = "rgba(232,238,246,.75)";
     ctx.font = "12px system-ui";
-    for (let k=0;k<=4;k++){
-      const v = maxV * (1 - k/4);
-      const yy = padT + (k/4)*h;
-      ctx.fillText(fmtCompact(v), 6, yy+4);
+    for (let k = 0; k <= 4; k++) {
+      const v = maxV * (1 - k / 4);
+      const yy = padT + (k / 4) * h;
+      ctx.fillText(fmtCompact(v), 6, yy + 4);
     }
 
     ctx.strokeStyle = "rgba(232,238,246,.55)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    for (let i=0;i<n;i++){
+    for (let i = 0; i < n; i++) {
       const xx = x(i);
       const yy = y(inlegValues[i]);
-      if (i===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+      if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
     }
     ctx.stroke();
 
     ctx.strokeStyle = "#2b7cff";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    for (let i=0;i<n;i++){
+    for (let i = 0; i < n; i++) {
       const xx = x(i);
       const yy = y(totalValues[i]);
-      if (i===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+      if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
     }
     ctx.stroke();
 
     ctx.fillStyle = "rgba(232,238,246,.9)";
     ctx.font = "12px system-ui";
-    ctx.fillText("Inleg", padL, H-10);
+    ctx.fillText("Inleg", padL, H - 10);
     ctx.fillStyle = "#2b7cff";
-    ctx.fillText("Totaal", padL+60, H-10);
+    ctx.fillText("Totaal", padL + 60, H - 10);
   }
 
-  function monthToText(m){
+  function monthToText(m) {
     if (m === null) return "niet gehaald";
     const y = Math.floor(m / 12);
     const mo = m % 12;
@@ -328,14 +391,14 @@
     return `${y} jaar ${mo} mnd`;
   }
 
-  function findMonth(values, target){
-    for (let i = 0; i < values.length; i++){
+  function findMonth(values, target) {
+    for (let i = 0; i < values.length; i++) {
       if (values[i] >= target) return i;
     }
     return null;
   }
 
-  function renderTimeline(sim, currentNow){
+  function renderTimeline(sim, currentNow) {
     const steps = [
       { name:"€7k", target:7000, note:"Gedragsmijlpaal" },
       { name:"€15k", target:15000, note:"Motor aan" },
@@ -347,9 +410,9 @@
     const container = document.getElementById("timeline");
     container.innerHTML = "";
 
-    for (const s of steps){
-      const m = findMonth(sim.values, s.target);     // wanneer je het haalt met jouw plan
-      const done = currentNow >= s.target;           // alleen aanvinken als huidig kapitaal al boven doel zit
+    for (const s of steps) {
+      const m = findMonth(sim.values, s.target);
+      const done = currentNow >= s.target;
       const pct = Math.max(0, Math.min(100, (currentNow / s.target) * 100));
 
       const div = document.createElement("div");
@@ -366,12 +429,20 @@
     }
   }
 
-  function render(){
+  function renderYieldSummary(start, rYear) {
+    const yearlyYield = start * rYear;
+    document.getElementById("yieldDay").textContent = fmt(yearlyYield / 365);
+    document.getElementById("yieldWeek").textContent = fmt(yearlyYield / 52);
+    document.getElementById("yieldMonth").textContent = fmt(yearlyYield / 12);
+    document.getElementById("yieldYear").textContent = fmt(yearlyYield);
+  }
+
+  function render() {
     const note = document.getElementById("note");
     note.textContent = "";
 
     const {start, monthly0, rYear, inflYear, years} = getInputs();
-    if (start < 0 || monthly0 < 0 || years <= 0){
+    if (start < 0 || monthly0 < 0 || years <= 0) {
       note.textContent = "Vul geldige waarden in (geen negatieve bedragen, looptijd > 0).";
       return;
     }
@@ -388,30 +459,33 @@
     document.getElementById("inleg").textContent = fmt(inlegTotal);
     document.getElementById("rendement").textContent = fmt(rendementDeel);
 
+    renderYieldSummary(start, rYear);
     drawChart(document.getElementById("chart"), sim.values, sim.inlegLine);
     renderTimeline(sim, start);
 
     const rows = [];
-    for (let y = 0; y <= Math.floor(years); y += 5){
-      const idx = Math.min(y * 12, sim.values.length-1);
+    for (let y = 0; y <= Math.floor(years); y += 5) {
+      const idx = Math.min(y * 12, sim.values.length - 1);
       const totaal = sim.values[idx];
       const inleg = sim.inlegLine[idx];
       const rend = totaal - inleg;
       rows.push({ year:y, totaal, inleg, rend });
     }
 
-    let html = `<tr><th>Jaar</th><th>Totaal</th><th>Inleg</th><th>Rendement</th></tr>`;
-    for (const r of rows){
-      html += `<tr><td>${r.year}</td><td>${fmt(r.totaal)}</td><td>${fmt(r.inleg)}</td><td>${fmt(r.rend)}</td></tr>`;
+    let html = "<tr><th>Jaar</th><th>Totaal</th><th>Inleg</th><th>Rendement</th></tr>";
+    for (const row of rows) {
+      html += `<tr><td>${row.year}</td><td>${fmt(row.totaal)}</td><td>${fmt(row.inleg)}</td><td>${fmt(row.rend)}</td></tr>`;
     }
     document.getElementById("table").innerHTML = html;
 
-    if (inflYear > 0.06){
+    if (inflYear > 0.06) {
       note.textContent = "Let op: je inflatie/inleggroei is vrij hoog. Dat maakt je eindbedrag veel groter, maar ook je maandinleg later veel zwaarder.";
     }
+
+    saveInputs();
   }
 
-  function solveGoal(){
+  function solveGoal() {
     const note = document.getElementById("note");
     const goalResult = document.getElementById("goalResult");
     note.textContent = "";
@@ -423,46 +497,59 @@
     const goalMonths = Math.max(0, Math.floor(goalMonthsRaw));
     const goalMode = document.getElementById("goalMode").value;
 
-    if (goalAmount <= 0 || goalMonths <= 0){
+    if (goalAmount <= 0 || goalMonths <= 0) {
       goalResult.textContent = "Vul een doelbedrag en deadline (maanden) in.";
       return;
     }
 
-    if (goalMode === "monthly"){
-      let lo = 0, hi = 8000;
-      for (let iter=0; iter<44; iter++){
-        const mid = (lo+hi)/2;
+    if (goalMode === "monthly") {
+      let lo = 0;
+      let hi = 8000;
+      for (let iter = 0; iter < 44; iter++) {
+        const mid = (lo + hi) / 2;
         const sim = simulate({start, monthly0, rYear, inflYear, years:1, overrideMonthly:mid, monthsOverride:goalMonths});
-        const end = sim.values[sim.values.length-1];
+        const end = sim.values[sim.values.length - 1];
         if (end >= goalAmount) hi = mid; else lo = mid;
       }
-      const needed = Math.ceil(hi/5)*5;
+      const needed = Math.ceil(hi / 5) * 5;
       goalResult.textContent = `🎯 Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer ${fmt(needed)} per maand nodig.`;
+      saveInputs();
       return;
     }
 
-    if (goalMode === "lump"){
-      let lo = 0, hi = 300000;
-      for (let iter=0; iter<44; iter++){
-        const mid = (lo+hi)/2;
+    if (goalMode === "lump") {
+      let lo = 0;
+      let hi = 300000;
+      for (let iter = 0; iter < 44; iter++) {
+        const mid = (lo + hi) / 2;
         const sim = simulate({start, monthly0, rYear, inflYear, years:1, lump:mid, monthsOverride:goalMonths});
-        const end = sim.values[sim.values.length-1];
+        const end = sim.values[sim.values.length - 1];
         if (end >= goalAmount) hi = mid; else lo = mid;
       }
-      const needed = Math.ceil(hi/10)*10;
+      const needed = Math.ceil(hi / 10) * 10;
       goalResult.textContent = `🎯 Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer een eenmalige storting van ${fmt(needed)} nodig (bovenop ${fmt(monthly0)} p/m).`;
-      return;
+      saveInputs();
     }
   }
 
   document.getElementById("calc").addEventListener("click", render);
   document.getElementById("share").addEventListener("click", share);
   document.getElementById("solveGoal").addEventListener("click", solveGoal);
-  window.addEventListener("load", () => { setInputsFromQuery(); render(); });
+
+  for (const id of ["start", "monthly", "r", "infl", "years", "goalAmount", "goalMonths", "goalMode"]) {
+    const el = document.getElementById(id);
+    el.addEventListener("input", saveInputs);
+    el.addEventListener("change", saveInputs);
+  }
+
+  window.addEventListener("load", () => {
+    restoreInputs();
+    setInputsFromQuery();
+    render();
+  });
 </script>
 
 <script>
-  // PWA: offline + installable
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("./service-worker.js").catch(() => {});
