@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Beleggen • Mini Planner+</title>
+  <title>Beleggen - Mini Planner+</title>
   <meta name="theme-color" content="#0b0f14" />
   <style>
     :root{color-scheme:dark;}
@@ -42,6 +42,10 @@
     .fill{height:100%;width:0%}
     canvas{width:100%;height:260px;background:#0b111a;border:1px solid #223043;border-radius:14px}
     .sectionTitle{margin:14px 0 8px;font-size:14px}
+    .sectionToggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+    .sectionToggle .label{font-size:14px;font-weight:700}
+    .sectionToggle .icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid #223043;border-radius:999px;background:#0b111a;font-size:14px;line-height:1;flex:0 0 auto}
+    .sectionBody.hidden{display:none}
     @media (max-width:980px){
       .grid{grid-template-columns:1fr}
       .kpis{grid-template-columns:1fr}
@@ -63,7 +67,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>📈 Beleggen • Mini Planner+</h1>
+    <h1>Beleggen - Mini Planner+</h1>
 
     <div class="grid">
       <div class="card">
@@ -74,11 +78,11 @@
 
         <div class="inputs">
           <div>
-            <label>Start (€)</label>
+            <label>Start (EUR)</label>
             <input id="start" type="number" step="100" value="5000" />
           </div>
           <div>
-            <label>Inleg p/m (€)</label>
+            <label>Inleg p/m (EUR)</label>
             <input id="monthly" type="number" step="25" value="325" />
           </div>
           <div>
@@ -88,6 +92,10 @@
           <div>
             <label>Inflatie / inleggroei p/j (%)</label>
             <input id="infl" type="number" step="0.1" value="2" />
+          </div>
+          <div>
+            <label>Inleggen voor (jaren)</label>
+            <input id="contribYears" type="number" step="1" value="30" />
           </div>
           <div class="full">
             <label>Looptijd (jaren)</label>
@@ -100,32 +108,39 @@
           <button id="share" class="chip" style="flex:1">Deel/opslaan als link</button>
         </div>
 
-        <h3 class="sectionTitle">🎯 Doel-modus</h3>
-        <div class="inputs">
-          <div>
-            <label>Doelbedrag (€)</label>
-            <input id="goalAmount" type="number" step="500" value="10000" />
+        <h3 class="sectionTitle">
+          <button type="button" class="sectionToggle" data-target="goalSection" aria-expanded="true">
+            <span class="label">Doel-modus</span>
+            <span class="icon" aria-hidden="true">-</span>
+          </button>
+        </h3>
+        <div id="goalSection" class="sectionBody">
+          <div class="inputs">
+            <div>
+              <label>Doelbedrag (EUR)</label>
+              <input id="goalAmount" type="number" step="500" value="10000" />
+            </div>
+            <div>
+              <label>Deadline (maanden)</label>
+              <input id="goalMonths" type="number" step="1" value="10.5" />
+            </div>
+            <div class="full">
+              <label>Wat wil je laten berekenen?</label>
+              <select id="goalMode">
+                <option value="monthly">Benodigde maandinleg</option>
+                <option value="lump">Benodigde eenmalige storting (bovenop huidige maandinleg)</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label>Deadline (maanden)</label>
-            <input id="goalMonths" type="number" step="1" value="10.5" />
+          <div class="row" style="margin-top:10px">
+            <button id="solveGoal" class="chip" style="flex:1">Bereken doel</button>
           </div>
-          <div class="full">
-            <label>Wat wil je laten berekenen?</label>
-            <select id="goalMode">
-              <option value="monthly">Benodigde maandinleg</option>
-              <option value="lump">Benodigde eenmalige storting (bovenop huidige maandinleg)</option>
-            </select>
-          </div>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button id="solveGoal" class="chip" style="flex:1">Bereken doel</button>
-        </div>
 
-        <p class="muted" id="goalResult" style="margin:10px 0 0; font-weight:800"></p>
-        <p class="muted" style="margin:10px 0 0">
-          Tip: doel-modus is ideaal voor “€10k in 10,5 maanden”-vragen.
-        </p>
+          <p class="muted" id="goalResult" style="margin:10px 0 0; font-weight:800"></p>
+          <p class="muted" style="margin:10px 0 0">
+            Tip: doel-modus is ideaal voor "EUR 10k in 10,5 maanden"-vragen.
+          </p>
+        </div>
       </div>
 
       <div class="card">
@@ -149,7 +164,13 @@
           </div>
         </div>
 
-        <h3 class="sectionTitle">Gemiddeld rendement op je huidige bedrag</h3>
+        <h3 class="sectionTitle">
+          <button type="button" class="sectionToggle" data-target="yieldSection" aria-expanded="true">
+            <span class="label">Gemiddeld rendement op je huidige bedrag</span>
+            <span class="icon" aria-hidden="true">-</span>
+          </button>
+        </h3>
+        <div id="yieldSection" class="sectionBody">
         <div class="kpis four">
           <div class="kpi">
             <div class="t">Per dag</div>
@@ -168,15 +189,37 @@
             <div class="v" id="yieldYear">–</div>
           </div>
         </div>
+        </div>
 
-        <h3 class="sectionTitle">📉 Grafiek (totaal vs inleg)</h3>
-        <canvas id="chart" width="1100" height="260"></canvas>
+        <h3 class="sectionTitle">
+          <button type="button" class="sectionToggle" data-target="chartSection" aria-expanded="true">
+            <span class="label">Grafiek (totaal vs inleg)</span>
+            <span class="icon" aria-hidden="true">-</span>
+          </button>
+        </h3>
+        <div id="chartSection" class="sectionBody">
+          <canvas id="chart" width="1100" height="260"></canvas>
+        </div>
 
-        <h3 class="sectionTitle">🏁 Kantelpunt timeline</h3>
-        <div id="timeline" class="timeline"></div>
+        <h3 class="sectionTitle">
+          <button type="button" class="sectionToggle" data-target="timelineSection" aria-expanded="true">
+            <span class="label">Kantelpunt timeline</span>
+            <span class="icon" aria-hidden="true">-</span>
+          </button>
+        </h3>
+        <div id="timelineSection" class="sectionBody">
+          <div id="timeline" class="timeline"></div>
+        </div>
 
-        <h3 class="sectionTitle">🧾 5-jaars overzicht</h3>
-        <div style="overflow-x:auto"><table id="table"></table></div>
+        <h3 class="sectionTitle">
+          <button type="button" class="sectionToggle" data-target="tableSection" aria-expanded="true">
+            <span class="label">5-jaars overzicht</span>
+            <span class="icon" aria-hidden="true">-</span>
+          </button>
+        </h3>
+        <div id="tableSection" class="sectionBody">
+          <div style="overflow-x:auto"><table id="table"></table></div>
+        </div>
 
         <p class="muted danger" id="note"></p>
       </div>
@@ -199,8 +242,11 @@
     return Math.round(n).toString();
   };
 
-  function simulate({start, monthly0, rYear, inflYear, years, lump = 0, overrideMonthly = null, monthsOverride = null}) {
+  function simulate({start, monthly0, rYear, inflYear, years, contribYears, lump = 0, overrideMonthly = null, monthsOverride = null}) {
     const months = monthsOverride !== null ? Math.max(0, Math.floor(monthsOverride)) : Math.max(0, Math.floor(years * 12));
+    const contributionMonths = monthsOverride !== null
+      ? months
+      : Math.min(months, Math.max(0, Math.floor(contribYears * 12)));
     const rm = Math.pow(1 + rYear, 1 / 12) - 1;
     const im = Math.pow(1 + inflYear, 1 / 12) - 1;
 
@@ -213,7 +259,7 @@
 
     for (let m = 1; m <= months; m++) {
       const baseMonthly = overrideMonthly !== null ? overrideMonthly : monthly0;
-      const monthly = baseMonthly * Math.pow(1 + im, m - 1);
+      const monthly = m <= contributionMonths ? baseMonthly * Math.pow(1 + im, m - 1) : 0;
 
       value = value * (1 + rm) + monthly;
 
@@ -233,6 +279,7 @@
       monthly0: Number(document.getElementById("monthly").value || 0),
       rYear: Number(document.getElementById("r").value || 0) / 100,
       inflYear: Number(document.getElementById("infl").value || 0) / 100,
+      contribYears: Number(document.getElementById("contribYears").value || 0),
       years: Number(document.getElementById("years").value || 0),
     };
   }
@@ -265,6 +312,7 @@
         monthly: saved.monthly0,
         r: saved.rYear != null ? saved.rYear * 100 : undefined,
         infl: saved.inflYear != null ? saved.inflYear * 100 : undefined,
+        contribYears: saved.contribYears,
         years: saved.years,
         goalAmount: saved.goalAmount,
         goalMonths: saved.goalMonths,
@@ -281,19 +329,20 @@
 
   function setInputsFromQuery() {
     const q = new URLSearchParams(location.search);
-    const map = { start:"start", m:"monthly", r:"r", i:"infl", y:"years" };
+    const map = { start:"start", m:"monthly", r:"r", i:"infl", cy:"contribYears", y:"years" };
     for (const [k, id] of Object.entries(map)) {
       if (q.has(k)) document.getElementById(id).value = q.get(k);
     }
   }
 
   function makeShareLink() {
-    const {start, monthly0, rYear, inflYear, years} = getInputs();
+    const {start, monthly0, rYear, inflYear, contribYears, years} = getInputs();
     const q = new URLSearchParams();
     q.set("start", Math.round(start));
     q.set("m", Math.round(monthly0));
     q.set("r", (rYear * 100).toFixed(2));
     q.set("i", (inflYear * 100).toFixed(2));
+    q.set("cy", Math.round(contribYears));
     q.set("y", Math.round(years));
     return location.origin + location.pathname + "?" + q.toString();
   }
@@ -400,11 +449,11 @@
 
   function renderTimeline(sim, currentNow) {
     const steps = [
-      { name:"€7k", target:7000, note:"Gedragsmijlpaal" },
-      { name:"€15k", target:15000, note:"Motor aan" },
-      { name:"€30k", target:30000, note:"Stabiliteit" },
-      { name:"€70k", target:70000, note:"Kantelpunt" },
-      { name:"€125k", target:125000, note:"Stop op 65 realistisch" },
+      { name:"EUR 7k", target:7000, note:"Gedragsmijlpaal" },
+      { name:"EUR 15k", target:15000, note:"Motor aan" },
+      { name:"EUR 30k", target:30000, note:"Stabiliteit" },
+      { name:"EUR 70k", target:70000, note:"Kantelpunt" },
+      { name:"EUR 125k", target:125000, note:"Stop op 65 realistisch" },
     ];
 
     const container = document.getElementById("timeline");
@@ -419,7 +468,7 @@
       div.className = "step";
       div.innerHTML = `
         <div class="top">
-          <div class="name">${done ? "✅ " : ""}${s.name}</div>
+          <div class="name">${done ? "[klaar] " : ""}${s.name}</div>
           <div class="meta">${done ? "gehaald" : "na " + monthToText(m)}</div>
         </div>
         <div class="meta" style="margin-top:6px">${s.note}</div>
@@ -441,13 +490,17 @@
     const note = document.getElementById("note");
     note.textContent = "";
 
-    const {start, monthly0, rYear, inflYear, years} = getInputs();
-    if (start < 0 || monthly0 < 0 || years <= 0) {
+    const {start, monthly0, rYear, inflYear, contribYears, years} = getInputs();
+    if (start < 0 || monthly0 < 0 || years <= 0 || contribYears < 0) {
       note.textContent = "Vul geldige waarden in (geen negatieve bedragen, looptijd > 0).";
       return;
     }
+    if (contribYears > years) {
+      note.textContent = "De inlegduur kan niet langer zijn dan de totale looptijd.";
+      return;
+    }
 
-    const sim = simulate({start, monthly0, rYear, inflYear, years});
+    const sim = simulate({start, monthly0, rYear, inflYear, years, contribYears});
     const end = sim.values[sim.values.length - 1];
     const contrib = sim.totalContrib;
 
@@ -472,9 +525,10 @@
       rows.push({ year:y, totaal, inleg, rend });
     }
 
-    let html = "<tr><th>Jaar</th><th>Totaal</th><th>Inleg</th><th>Rendement</th></tr>";
+    let html = "<tr><th>Jaar</th><th>Totaal</th><th>Inleg</th><th>Rendement</th><th>% groei</th></tr>";
     for (const row of rows) {
-      html += `<tr><td>${row.year}</td><td>${fmt(row.totaal)}</td><td>${fmt(row.inleg)}</td><td>${fmt(row.rend)}</td></tr>`;
+      const growthPct = row.inleg > 0 ? ((row.rend / row.inleg) * 100).toFixed(1).replace(".", ",") + "%" : "-";
+      html += `<tr><td>${row.year}</td><td>${fmt(row.totaal)}</td><td>${fmt(row.inleg)}</td><td>${fmt(row.rend)}</td><td>${growthPct}</td></tr>`;
     }
     document.getElementById("table").innerHTML = html;
 
@@ -512,7 +566,7 @@
         if (end >= goalAmount) hi = mid; else lo = mid;
       }
       const needed = Math.ceil(hi / 5) * 5;
-      goalResult.textContent = `🎯 Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer ${fmt(needed)} per maand nodig.`;
+      goalResult.textContent = `Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer ${fmt(needed)} per maand nodig.`;
       saveInputs();
       return;
     }
@@ -527,7 +581,7 @@
         if (end >= goalAmount) hi = mid; else lo = mid;
       }
       const needed = Math.ceil(hi / 10) * 10;
-      goalResult.textContent = `🎯 Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer een eenmalige storting van ${fmt(needed)} nodig (bovenop ${fmt(monthly0)} p/m).`;
+      goalResult.textContent = `Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer een eenmalige storting van ${fmt(needed)} nodig (bovenop ${fmt(monthly0)} p/m).`;
       saveInputs();
     }
   }
@@ -536,7 +590,16 @@
   document.getElementById("share").addEventListener("click", share);
   document.getElementById("solveGoal").addEventListener("click", solveGoal);
 
-  for (const id of ["start", "monthly", "r", "infl", "years", "goalAmount", "goalMonths", "goalMode"]) {
+  for (const btn of document.querySelectorAll(".sectionToggle")) {
+    btn.addEventListener("click", () => {
+      const target = document.getElementById(btn.dataset.target);
+      const isHidden = target.classList.toggle("hidden");
+      btn.setAttribute("aria-expanded", String(!isHidden));
+      btn.querySelector(".icon").textContent = isHidden ? "+" : "-";
+    });
+  }
+
+  for (const id of ["start", "monthly", "r", "infl", "contribYears", "years", "goalAmount", "goalMonths", "goalMode"]) {
     const el = document.getElementById(id);
     el.addEventListener("input", saveInputs);
     el.addEventListener("change", saveInputs);
