@@ -78,8 +78,12 @@
 
         <div class="inputs">
           <div>
-            <label>Start (EUR)</label>
+            <label>Huidige inleg (EUR)</label>
             <input id="start" type="number" step="100" value="5000" />
+          </div>
+          <div>
+            <label>Huidig rendement (EUR)</label>
+            <input id="currentReturn" type="number" step="100" value="0" />
           </div>
           <div>
             <label>Inleg p/m (EUR)</label>
@@ -155,7 +159,7 @@
             <div class="v" id="end">–</div>
           </div>
           <div class="kpi">
-            <div class="t">Inleg (start + stortingen)</div>
+            <div class="t">Inleg (huidig + stortingen)</div>
             <div class="v" id="inleg">–</div>
           </div>
           <div class="kpi">
@@ -166,7 +170,7 @@
 
         <h3 class="sectionTitle">
           <button type="button" class="sectionToggle" data-target="yieldSection" aria-expanded="true">
-            <span class="label">Gemiddeld rendement op je huidige bedrag</span>
+            <span class="label">Huidig rendement op je huidige inleg</span>
             <span class="icon" aria-hidden="true">-</span>
           </button>
         </h3>
@@ -242,7 +246,7 @@
     return Math.round(n).toString();
   };
 
-  function simulate({start, monthly0, rYear, inflYear, years, contribYears, lump = 0, overrideMonthly = null, monthsOverride = null}) {
+  function simulate({start, currentReturn, monthly0, rYear, inflYear, years, contribYears, lump = 0, overrideMonthly = null, monthsOverride = null}) {
     const months = monthsOverride !== null ? Math.max(0, Math.floor(monthsOverride)) : Math.max(0, Math.floor(years * 12));
     const contributionMonths = monthsOverride !== null
       ? months
@@ -250,7 +254,7 @@
     const rm = Math.pow(1 + rYear, 1 / 12) - 1;
     const im = Math.pow(1 + inflYear, 1 / 12) - 1;
 
-    let value = start + lump;
+    let value = start + currentReturn + lump;
     let totalContrib = lump;
 
     const values = [value];
@@ -276,6 +280,7 @@
   function getInputs() {
     return {
       start: Number(document.getElementById("start").value || 0),
+      currentReturn: Number(document.getElementById("currentReturn").value || 0),
       monthly0: Number(document.getElementById("monthly").value || 0),
       rYear: Number(document.getElementById("r").value || 0) / 100,
       inflYear: Number(document.getElementById("infl").value || 0) / 100,
@@ -309,6 +314,7 @@
       const saved = JSON.parse(raw);
       const fieldValues = {
         start: saved.start,
+        currentReturn: saved.currentReturn,
         monthly: saved.monthly0,
         r: saved.rYear != null ? saved.rYear * 100 : undefined,
         infl: saved.inflYear != null ? saved.inflYear * 100 : undefined,
@@ -329,16 +335,17 @@
 
   function setInputsFromQuery() {
     const q = new URLSearchParams(location.search);
-    const map = { start:"start", m:"monthly", r:"r", i:"infl", cy:"contribYears", y:"years" };
+    const map = { start:"start", cr:"currentReturn", m:"monthly", r:"r", i:"infl", cy:"contribYears", y:"years" };
     for (const [k, id] of Object.entries(map)) {
       if (q.has(k)) document.getElementById(id).value = q.get(k);
     }
   }
 
   function makeShareLink() {
-    const {start, monthly0, rYear, inflYear, contribYears, years} = getInputs();
+    const {start, currentReturn, monthly0, rYear, inflYear, contribYears, years} = getInputs();
     const q = new URLSearchParams();
     q.set("start", Math.round(start));
+    q.set("cr", Math.round(currentReturn));
     q.set("m", Math.round(monthly0));
     q.set("r", (rYear * 100).toFixed(2));
     q.set("i", (inflYear * 100).toFixed(2));
@@ -490,8 +497,8 @@
     const note = document.getElementById("note");
     note.textContent = "";
 
-    const {start, monthly0, rYear, inflYear, contribYears, years} = getInputs();
-    if (start < 0 || monthly0 < 0 || years <= 0 || contribYears < 0) {
+    const {start, currentReturn, monthly0, rYear, inflYear, contribYears, years} = getInputs();
+    if (start < 0 || currentReturn < 0 || monthly0 < 0 || years <= 0 || contribYears < 0) {
       note.textContent = "Vul geldige waarden in (geen negatieve bedragen, looptijd > 0).";
       return;
     }
@@ -500,21 +507,21 @@
       return;
     }
 
-    const sim = simulate({start, monthly0, rYear, inflYear, years, contribYears});
+    const sim = simulate({start, currentReturn, monthly0, rYear, inflYear, years, contribYears});
     const end = sim.values[sim.values.length - 1];
     const contrib = sim.totalContrib;
 
     document.getElementById("end").textContent = fmt(end);
 
     const inlegTotal = start + contrib;
-    const rendementDeel = end - inlegTotal;
+    const rendementDeel = currentReturn + end - (start + currentReturn + contrib);
 
     document.getElementById("inleg").textContent = fmt(inlegTotal);
     document.getElementById("rendement").textContent = fmt(rendementDeel);
 
-    renderYieldSummary(start, rYear);
+    renderYieldSummary(start + currentReturn, rYear);
     drawChart(document.getElementById("chart"), sim.values, sim.inlegLine);
-    renderTimeline(sim, start);
+    renderTimeline(sim, start + currentReturn);
 
     const rows = [];
     for (let y = 0; y <= Math.floor(years); y += 5) {
@@ -545,7 +552,7 @@
     note.textContent = "";
     goalResult.textContent = "";
 
-    const {start, monthly0, rYear, inflYear} = getInputs();
+    const {start, currentReturn, monthly0, rYear, inflYear} = getInputs();
     const goalAmount = Number(document.getElementById("goalAmount").value || 0);
     const goalMonthsRaw = Number(document.getElementById("goalMonths").value || 0);
     const goalMonths = Math.max(0, Math.floor(goalMonthsRaw));
@@ -561,7 +568,7 @@
       let hi = 8000;
       for (let iter = 0; iter < 44; iter++) {
         const mid = (lo + hi) / 2;
-        const sim = simulate({start, monthly0, rYear, inflYear, years:1, overrideMonthly:mid, monthsOverride:goalMonths});
+        const sim = simulate({start, currentReturn, monthly0, rYear, inflYear, years:1, overrideMonthly:mid, monthsOverride:goalMonths});
         const end = sim.values[sim.values.length - 1];
         if (end >= goalAmount) hi = mid; else lo = mid;
       }
@@ -576,7 +583,7 @@
       let hi = 300000;
       for (let iter = 0; iter < 44; iter++) {
         const mid = (lo + hi) / 2;
-        const sim = simulate({start, monthly0, rYear, inflYear, years:1, lump:mid, monthsOverride:goalMonths});
+        const sim = simulate({start, currentReturn, monthly0, rYear, inflYear, years:1, lump:mid, monthsOverride:goalMonths});
         const end = sim.values[sim.values.length - 1];
         if (end >= goalAmount) hi = mid; else lo = mid;
       }
@@ -599,7 +606,7 @@
     });
   }
 
-  for (const id of ["start", "monthly", "r", "infl", "contribYears", "years", "goalAmount", "goalMonths", "goalMode"]) {
+  for (const id of ["start", "currentReturn", "monthly", "r", "infl", "contribYears", "years", "goalAmount", "goalMonths", "goalMode"]) {
     const el = document.getElementById(id);
     el.addEventListener("input", saveInputs);
     el.addEventListener("change", saveInputs);
