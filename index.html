@@ -16,10 +16,12 @@
     .inputs .full{grid-column:1/-1}
     label{display:block;font-size:12px;opacity:.85;margin:2px 0 6px}
     input, select{width:100%;box-sizing:border-box;padding:12px 12px;border-radius:12px;border:1px solid #2a3a52;background:#0b111a;color:#e8eef6;font-size:15px}
+    input[type="checkbox"]{width:18px;height:18px;margin:0;accent-color:#2b7cff;flex:0 0 auto}
     button{width:100%;padding:12px;border-radius:12px;border:0;background:#2b7cff;color:#fff;font-weight:800;cursor:pointer}
     button:active{transform:scale(.99)}
     .kpis{display:grid;gap:10px;grid-template-columns:repeat(3, minmax(0, 1fr))}
     .kpis.four{grid-template-columns:repeat(4, minmax(0, 1fr))}
+    .kpis.six{grid-template-columns:repeat(3, minmax(0, 1fr))}
     .kpi{background:#0b111a;border:1px solid #223043;border-radius:14px;padding:12px}
     .kpi .t{font-size:12px;opacity:.85}
     .kpi .v{font-size:18px;font-weight:900;margin-top:4px}
@@ -46,10 +48,20 @@
     .sectionToggle .label{font-size:14px;font-weight:700}
     .sectionToggle .icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid #223043;border-radius:999px;background:#0b111a;font-size:14px;line-height:1;flex:0 0 auto}
     .sectionBody.hidden{display:none}
+    .checkRow{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid #2a3a52;border-radius:12px;background:#0b111a;cursor:pointer}
+    .checkRow span{font-size:13px;line-height:1.3}
+    .phaseLegend{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 8px;font-size:12px;opacity:.9}
+    .phaseLegend span{display:inline-flex;align-items:center;gap:6px}
+    .phaseLegend i{display:inline-block;width:18px;height:4px;border-radius:99px}
+    .phaseLegend .build{background:#2b7cff}
+    .phaseLegend .withdraw{background:#ffb84d}
+    .depletion{margin:10px 0 0;padding:10px 12px;border:1px solid #3b4657;border-radius:12px;background:#0b111a;font-size:13px;font-weight:800}
+    .depletion.empty{border-color:#80592a;color:#ffcf88}
     @media (max-width:980px){
       .grid{grid-template-columns:1fr}
       .kpis{grid-template-columns:1fr}
       .kpis.four{grid-template-columns:repeat(2, minmax(0, 1fr))}
+      .kpis.six{grid-template-columns:repeat(2, minmax(0, 1fr))}
       canvas{height:240px}
     }
     @media (max-width:560px){
@@ -59,6 +71,7 @@
   </style>
 
   <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Beleggen">
@@ -90,24 +103,42 @@
             <input id="start" type="number" step="100" value="5000" />
           </div>
           <div>
-            <label>Inleg p/m (EUR)</label>
+            <label>Aantal jaren opbouwen</label>
+            <input id="buildYears" type="number" min="0" step="1" value="20" />
+          </div>
+          <div>
+            <label>Maandelijkse inleg tijdens opbouw (EUR)</label>
             <input id="monthly" type="number" step="25" value="325" />
           </div>
           <div>
-            <label>Rendement p/j (%)</label>
+            <label>Jaarlijks rendement tijdens opbouw (%)</label>
             <input id="r" type="number" step="0.1" value="5" />
           </div>
           <div>
-            <label>Inflatie / inleggroei p/j (%)</label>
+            <label>Inflatie / jaarlijkse verhoging (%)</label>
             <input id="infl" type="number" step="0.1" value="2" />
           </div>
           <div>
-            <label>Inleggen voor (jaren)</label>
-            <input id="contribYears" type="number" step="1" value="30" />
+            <label>Maandelijkse opname na opbouw (EUR)</label>
+            <input id="withdrawal" type="number" min="0" step="25" value="200" />
           </div>
-          <div class="full">
-            <label>Looptijd (jaren)</label>
-            <input id="years" type="number" step="1" value="30" />
+          <div>
+            <label>Aantal jaren opnemen</label>
+            <input id="withdrawalYears" type="number" min="0" step="1" value="20" />
+          </div>
+          <div>
+            <label>Jaarlijks rendement tijdens opname (%)</label>
+            <input id="withdrawalReturn" type="number" step="0.1" value="4" />
+          </div>
+          <div class="full inputs">
+            <label class="checkRow">
+              <input id="stopContribution" type="checkbox" checked />
+              <span>Maandelijkse inleg stopt zodra de opnamefase begint</span>
+            </label>
+            <label class="checkRow">
+              <input id="inflateWithdrawal" type="checkbox" />
+              <span>Maandelijkse opname stijgt jaarlijks mee met inflatie</span>
+            </label>
           </div>
         </div>
 
@@ -157,20 +188,33 @@
           <span class="pill" id="mode">nominaal</span>
         </div>
 
-        <div class="kpis">
+        <div class="kpis six">
           <div class="kpi">
-            <div class="t">Totaal vermogen</div>
+            <div class="t">Na opbouwfase</div>
             <div class="v" id="end">–</div>
           </div>
           <div class="kpi">
-            <div class="t">Inleg (huidig + stortingen)</div>
+            <div class="t">Na opnamefase</div>
             <div class="v" id="inleg">–</div>
           </div>
           <div class="kpi">
-            <div class="t">Rendement (deel)</div>
+            <div class="t">Totaal ingelegd</div>
             <div class="v" id="rendement">–</div>
           </div>
+          <div class="kpi">
+            <div class="t">Totaal opgenomen</div>
+            <div class="v" id="totalWithdrawn">-</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Totaal rendement</div>
+            <div class="v" id="totalReturn">-</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Totale looptijd</div>
+            <div class="v" id="totalDuration">-</div>
+          </div>
         </div>
+        <div id="depletion" class="depletion"></div>
 
         <h3 class="sectionTitle">
           <button type="button" class="sectionToggle" data-target="yieldSection" aria-expanded="true">
@@ -206,6 +250,10 @@
           </button>
         </h3>
         <div id="chartSection" class="sectionBody">
+          <div class="phaseLegend">
+            <span><i class="build"></i>Opbouwfase</span>
+            <span><i class="withdraw"></i>Opnamefase</span>
+          </div>
           <canvas id="chart" width="1100" height="260"></canvas>
         </div>
 
@@ -221,7 +269,7 @@
 
         <h3 class="sectionTitle">
           <button type="button" class="sectionToggle" data-target="tableSection" aria-expanded="true">
-            <span class="label">5-jaars overzicht</span>
+            <span class="label">Jaaroverzicht</span>
             <span class="icon" aria-hidden="true">-</span>
           </button>
         </h3>
@@ -250,49 +298,126 @@
     return Math.round(n).toString();
   };
 
-  function simulate({start, currentReturn, monthly0, rYear, inflYear, years, contribYears, lump = 0, overrideMonthly = null, monthsOverride = null}) {
-    const months = monthsOverride !== null ? Math.max(0, Math.floor(monthsOverride)) : Math.max(0, Math.floor(years * 12));
-    const contributionMonths = monthsOverride !== null
-      ? months
-      : Math.min(months, Math.max(0, Math.floor(contribYears * 12)));
-    const rm = Math.pow(1 + rYear, 1 / 12) - 1;
-    const im = Math.pow(1 + inflYear, 1 / 12) - 1;
+  function simulatePlan(input) {
+    const buildMonths = Math.max(0, Math.floor(input.buildYears * 12));
+    const withdrawalMonths = Math.max(0, Math.floor(input.withdrawalYears * 12));
+    const totalMonths = buildMonths + withdrawalMonths;
+    const buildRate = Math.pow(1 + input.buildReturn, 1 / 12) - 1;
+    const withdrawalRate = Math.pow(1 + input.withdrawalReturn, 1 / 12) - 1;
+    const inflationRate = Math.pow(1 + input.inflation, 1 / 12) - 1;
 
-    let value = start + currentReturn + lump;
-    let totalContrib = lump;
+    let value = input.currentTotal;
+    let cumulativeContributions = input.currentContribution;
+    let totalContributed = input.currentContribution;
+    let totalWithdrawn = 0;
+    let totalGeneratedReturn = input.currentReturn;
+    let depletedAt = null;
 
     const values = [value];
-    const inlegLine = [start + lump];
-    let inlegCumul = start + lump;
+    const contributionLine = [cumulativeContributions];
+    const annualRows = [];
+    let annual = { start: value, contribution: 0, withdrawal: 0, returnAmount: 0 };
 
-    for (let m = 1; m <= months; m++) {
-      const baseMonthly = overrideMonthly !== null ? overrideMonthly : monthly0;
-      const monthly = m <= contributionMonths ? baseMonthly * Math.pow(1 + im, m - 1) : 0;
+    for (let month = 1; month <= totalMonths; month++) {
+      const inWithdrawalPhase = month > buildMonths;
+      const phaseMonth = inWithdrawalPhase ? month - buildMonths : month;
+      const monthlyRate = inWithdrawalPhase ? withdrawalRate : buildRate;
+      const beginMonthValue = value;
+      const returnAmount = beginMonthValue * monthlyRate;
 
-      value = value * (1 + rm) + monthly;
+      let contribution = 0;
+      if (!inWithdrawalPhase || !input.stopContribution) {
+        contribution = input.monthlyContribution * Math.pow(1 + inflationRate, month - 1);
+      }
 
-      totalContrib += monthly;
-      inlegCumul += monthly;
+      let requestedWithdrawal = 0;
+      if (inWithdrawalPhase && value > 0) {
+        requestedWithdrawal = input.monthlyWithdrawal;
+        if (input.inflateWithdrawal) {
+          const completedWithdrawalYears = Math.floor((phaseMonth - 1) / 12);
+          requestedWithdrawal *= Math.pow(1 + input.inflation, completedWithdrawalYears);
+        }
+      }
+
+      const beforeWithdrawal = Math.max(0, value + returnAmount + contribution);
+      const withdrawal = Math.min(requestedWithdrawal, beforeWithdrawal);
+      value = Math.max(0, beforeWithdrawal - withdrawal);
+
+      totalContributed += contribution;
+      cumulativeContributions += contribution;
+      totalWithdrawn += withdrawal;
+      totalGeneratedReturn += returnAmount;
+
+      annual.contribution += contribution;
+      annual.withdrawal += withdrawal;
+      annual.returnAmount += returnAmount;
+
+      if (!depletedAt && inWithdrawalPhase && requestedWithdrawal > 0 && value <= 0) {
+        depletedAt = { totalMonth: month, withdrawalMonth: phaseMonth };
+      }
 
       values.push(value);
-      inlegLine.push(inlegCumul);
+      contributionLine.push(cumulativeContributions);
+
+      if (month % 12 === 0 || month === totalMonths) {
+        annualRows.push({
+          year: Math.ceil(month / 12),
+          phase: month <= buildMonths ? "Opbouw" : "Opname",
+          start: annual.start,
+          contribution: annual.contribution,
+          withdrawal: annual.withdrawal,
+          returnAmount: annual.returnAmount,
+          end: value,
+        });
+        annual = { start: value, contribution: 0, withdrawal: 0, returnAmount: 0 };
+      }
     }
 
-    return { months, values, inlegLine, totalContrib };
+    return {
+      buildMonths,
+      withdrawalMonths,
+      totalMonths,
+      values,
+      contributionLine,
+      annualRows,
+      endBuild: values[buildMonths] ?? input.currentTotal,
+      endWithdrawal: value,
+      totalContributed,
+      totalWithdrawn,
+      totalGeneratedReturn,
+      depletedAt,
+    };
+  }
+
+  function simulateGoal({currentTotal, monthly, rYear, inflation, months, lump = 0}) {
+    const monthlyRate = Math.pow(1 + rYear, 1 / 12) - 1;
+    const inflationRate = Math.pow(1 + inflation, 1 / 12) - 1;
+    let value = currentTotal + lump;
+
+    for (let month = 1; month <= months; month++) {
+      const contribution = monthly * Math.pow(1 + inflationRate, month - 1);
+      value = value * (1 + monthlyRate) + contribution;
+    }
+
+    return value;
   }
 
   function getInputs() {
     syncCurrentAmounts();
 
     return {
-      start: Number(document.getElementById("start").value || 0),
+      currentContribution: Number(document.getElementById("start").value || 0),
       currentReturn: Number(document.getElementById("currentReturn").value || 0),
       currentTotal: Number(document.getElementById("currentTotal").value || 0),
-      monthly0: Number(document.getElementById("monthly").value || 0),
-      rYear: Number(document.getElementById("r").value || 0) / 100,
-      inflYear: Number(document.getElementById("infl").value || 0) / 100,
-      contribYears: Number(document.getElementById("contribYears").value || 0),
-      years: Number(document.getElementById("years").value || 0),
+      buildYears: Number(document.getElementById("buildYears").value || 0),
+      monthlyContribution: Number(document.getElementById("monthly").value || 0),
+      buildReturn: Number(document.getElementById("r").value || 0) / 100,
+      inflation: Number(document.getElementById("infl").value || 0) / 100,
+      monthlyWithdrawal: Number(document.getElementById("withdrawal").value || 0),
+      withdrawalYears: Number(document.getElementById("withdrawalYears").value || 0),
+      withdrawalReturn: Number(document.getElementById("withdrawalReturn").value || 0) / 100,
+      stopContribution: document.getElementById("stopContribution").checked,
+      inflateWithdrawal: document.getElementById("inflateWithdrawal").checked,
     };
   }
 
@@ -320,14 +445,16 @@
 
       const saved = JSON.parse(raw);
       const fieldValues = {
-        start: saved.start,
+        start: saved.currentContribution ?? saved.start,
         currentReturn: saved.currentReturn,
         currentTotal: saved.currentTotal,
-        monthly: saved.monthly0,
-        r: saved.rYear != null ? saved.rYear * 100 : undefined,
-        infl: saved.inflYear != null ? saved.inflYear * 100 : undefined,
-        contribYears: saved.contribYears,
-        years: saved.years,
+        buildYears: saved.buildYears ?? saved.contribYears ?? saved.years,
+        monthly: saved.monthlyContribution ?? saved.monthly0,
+        r: saved.buildReturn != null ? saved.buildReturn * 100 : saved.rYear != null ? saved.rYear * 100 : undefined,
+        infl: saved.inflation != null ? saved.inflation * 100 : saved.inflYear != null ? saved.inflYear * 100 : undefined,
+        withdrawal: saved.monthlyWithdrawal,
+        withdrawalYears: saved.withdrawalYears,
+        withdrawalReturn: saved.withdrawalReturn != null ? saved.withdrawalReturn * 100 : undefined,
         goalAmount: saved.goalAmount,
         goalMonths: saved.goalMonths,
         goalMode: saved.goalMode,
@@ -338,28 +465,37 @@
         const el = document.getElementById(id);
         if (el) el.value = value;
       }
+
+      if (saved.stopContribution != null) document.getElementById("stopContribution").checked = saved.stopContribution;
+      if (saved.inflateWithdrawal != null) document.getElementById("inflateWithdrawal").checked = saved.inflateWithdrawal;
     } catch (_) {}
   }
 
   function setInputsFromQuery() {
     const q = new URLSearchParams(location.search);
-    const map = { start:"start", cr:"currentReturn", ct:"currentTotal", m:"monthly", r:"r", i:"infl", cy:"contribYears", y:"years" };
+    const map = { start:"start", cr:"currentReturn", ct:"currentTotal", by:"buildYears", m:"monthly", r:"r", i:"infl", w:"withdrawal", wy:"withdrawalYears", wr:"withdrawalReturn" };
     for (const [k, id] of Object.entries(map)) {
       if (q.has(k)) document.getElementById(id).value = q.get(k);
     }
+    if (q.has("sc")) document.getElementById("stopContribution").checked = q.get("sc") === "1";
+    if (q.has("iw")) document.getElementById("inflateWithdrawal").checked = q.get("iw") === "1";
   }
 
   function makeShareLink() {
-    const {start, currentReturn, currentTotal, monthly0, rYear, inflYear, contribYears, years} = getInputs();
+    const input = getInputs();
     const q = new URLSearchParams();
-    q.set("start", Math.round(start));
-    q.set("cr", Math.round(currentReturn));
-    q.set("ct", Math.round(currentTotal));
-    q.set("m", Math.round(monthly0));
-    q.set("r", (rYear * 100).toFixed(2));
-    q.set("i", (inflYear * 100).toFixed(2));
-    q.set("cy", Math.round(contribYears));
-    q.set("y", Math.round(years));
+    q.set("start", Math.round(input.currentContribution));
+    q.set("cr", Math.round(input.currentReturn));
+    q.set("ct", Math.round(input.currentTotal));
+    q.set("by", Math.round(input.buildYears));
+    q.set("m", Math.round(input.monthlyContribution));
+    q.set("r", (input.buildReturn * 100).toFixed(2));
+    q.set("i", (input.inflation * 100).toFixed(2));
+    q.set("w", Math.round(input.monthlyWithdrawal));
+    q.set("wy", Math.round(input.withdrawalYears));
+    q.set("wr", (input.withdrawalReturn * 100).toFixed(2));
+    q.set("sc", input.stopContribution ? "1" : "0");
+    q.set("iw", input.inflateWithdrawal ? "1" : "0");
     return location.origin + location.pathname + "?" + q.toString();
   }
 
@@ -382,7 +518,7 @@
     }
   }
 
-  function drawChart(canvas, totalValues, inlegValues) {
+  function drawChart(canvas, sim) {
     const ctx = canvas.getContext("2d");
     const W = canvas.width;
     const H = canvas.height;
@@ -391,16 +527,26 @@
     const padL = 44;
     const padR = 16;
     const padT = 16;
-    const padB = 30;
+    const padB = 34;
     const w = W - padL - padR;
     const h = H - padT - padB;
 
+    const totalValues = sim.values;
+    const contributionValues = sim.contributionLine;
     const n = totalValues.length;
-    const maxV = Math.max(...totalValues, ...inlegValues) * 1.05;
+    const maxV = Math.max(1, ...totalValues, ...contributionValues) * 1.05;
     const minV = 0;
 
-    const x = (i) => padL + (i / (n - 1)) * w;
+    const x = (i) => padL + (n <= 1 ? 0 : (i / (n - 1)) * w);
     const y = (v) => padT + (1 - (v - minV) / (maxV - minV)) * h;
+
+    const phaseX = x(Math.min(sim.buildMonths, n - 1));
+    ctx.fillStyle = "rgba(43,124,255,.06)";
+    ctx.fillRect(padL, padT, Math.max(0, phaseX - padL), h);
+    if (sim.withdrawalMonths > 0) {
+      ctx.fillStyle = "rgba(255,184,77,.07)";
+      ctx.fillRect(phaseX, padT, padL + w - phaseX, h);
+    }
 
     ctx.strokeStyle = "#223043";
     ctx.lineWidth = 1;
@@ -411,6 +557,35 @@
       ctx.lineTo(padL + w, yy);
       ctx.stroke();
     }
+
+    const totalYears = sim.totalMonths / 12;
+    const roughYearStep = totalYears > 0 ? totalYears / 7 : 1;
+    const yearStep = [1, 2, 5, 10, 20, 50, 100].find((step) => step >= roughYearStep) || 100;
+    const tickMonths = new Set([0, sim.buildMonths, sim.totalMonths]);
+    for (let year = yearStep; year < totalYears; year += yearStep) {
+      tickMonths.add(Math.round(year * 12));
+    }
+
+    ctx.font = "11px system-ui";
+    for (const month of [...tickMonths].sort((a, b) => a - b)) {
+      if (month < 0 || month > sim.totalMonths) continue;
+      const xx = x(month);
+      ctx.strokeStyle = month === sim.buildMonths && sim.withdrawalMonths > 0
+        ? "rgba(255,184,77,.35)"
+        : "rgba(232,238,246,.10)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(xx, padT);
+      ctx.lineTo(xx, padT + h);
+      ctx.stroke();
+
+      const year = month / 12;
+      const label = month === 0 ? "Nu" : `${year.toLocaleString("nl-NL", { maximumFractionDigits:1 })} jaar`;
+      ctx.fillStyle = month === sim.buildMonths && sim.withdrawalMonths > 0 ? "#ffcf88" : "rgba(232,238,246,.8)";
+      ctx.textAlign = month === 0 ? "left" : month === sim.totalMonths ? "right" : "center";
+      ctx.fillText(label, xx, H - 8);
+    }
+    ctx.textAlign = "left";
 
     ctx.fillStyle = "rgba(232,238,246,.75)";
     ctx.font = "12px system-ui";
@@ -425,26 +600,37 @@
     ctx.beginPath();
     for (let i = 0; i < n; i++) {
       const xx = x(i);
-      const yy = y(inlegValues[i]);
+      const yy = y(contributionValues[i]);
       if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
     }
     ctx.stroke();
 
-    ctx.strokeStyle = "#2b7cff";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    for (let i = 0; i < n; i++) {
-      const xx = x(i);
-      const yy = y(totalValues[i]);
-      if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+    function drawPhase(startIndex, endIndex, color) {
+      if (endIndex < startIndex) return;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let i = startIndex; i <= endIndex; i++) {
+        const xx = x(i);
+        const yy = y(totalValues[i]);
+        if (i === startIndex) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
 
-    ctx.fillStyle = "rgba(232,238,246,.9)";
-    ctx.font = "12px system-ui";
-    ctx.fillText("Inleg", padL, H - 10);
-    ctx.fillStyle = "#2b7cff";
-    ctx.fillText("Totaal", padL + 60, H - 10);
+    drawPhase(0, Math.min(sim.buildMonths, n - 1), "#2b7cff");
+    if (sim.withdrawalMonths > 0) {
+      drawPhase(Math.min(sim.buildMonths, n - 1), n - 1, "#ffb84d");
+      ctx.strokeStyle = "rgba(255,184,77,.7)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(phaseX, padT);
+      ctx.lineTo(phaseX, padT + h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
   }
 
   function monthToText(m) {
@@ -530,50 +716,57 @@
     const note = document.getElementById("note");
     note.textContent = "";
 
-    const {start, currentReturn, monthly0, rYear, inflYear, contribYears, years} = getInputs();
-    if (start < 0 || start + currentReturn < 0 || monthly0 < 0 || years <= 0 || contribYears < 0) {
-      note.textContent = "Vul geldige waarden in (geen negatieve bedragen, huidig totaal >= 0, looptijd > 0).";
+    const input = getInputs();
+    if (
+      input.currentContribution < 0 || input.currentTotal < 0 ||
+      input.monthlyContribution < 0 || input.monthlyWithdrawal < 0 ||
+      input.buildYears < 0 || input.withdrawalYears < 0 ||
+      input.buildReturn <= -1 || input.withdrawalReturn <= -1 || input.inflation <= -1
+    ) {
+      note.textContent = "Vul geldige waarden in: bedragen en jaren mogen niet negatief zijn en percentages moeten hoger zijn dan -100%.";
       return;
     }
-    if (contribYears > years) {
-      note.textContent = "De inlegduur kan niet langer zijn dan de totale looptijd.";
+    if (input.buildYears + input.withdrawalYears <= 0) {
+      note.textContent = "Vul minimaal een opbouw- of opnameperiode in.";
       return;
     }
 
-    const sim = simulate({start, currentReturn, monthly0, rYear, inflYear, years, contribYears});
-    const end = sim.values[sim.values.length - 1];
-    const contrib = sim.totalContrib;
+    const sim = simulatePlan(input);
 
-    document.getElementById("end").textContent = fmt(end);
+    document.getElementById("end").textContent = fmt(sim.endBuild);
+    document.getElementById("inleg").textContent = fmt(sim.endWithdrawal);
+    document.getElementById("rendement").textContent = fmt(sim.totalContributed);
+    document.getElementById("totalWithdrawn").textContent = fmt(sim.totalWithdrawn);
+    document.getElementById("totalReturn").textContent = fmt(sim.totalGeneratedReturn);
+    document.getElementById("totalDuration").textContent = `${input.buildYears + input.withdrawalYears} jaar`;
 
-    const inlegTotal = start + contrib;
-    const rendementDeel = currentReturn + end - (start + currentReturn + contrib);
-
-    document.getElementById("inleg").textContent = fmt(inlegTotal);
-    document.getElementById("rendement").textContent = fmt(rendementDeel);
-
-    renderYieldSummary(start + currentReturn, rYear);
-    drawChart(document.getElementById("chart"), sim.values, sim.inlegLine);
-    renderTimeline(sim, start + currentReturn);
-
-    const rows = [];
-    for (let y = 0; y <= Math.floor(years); y += 5) {
-      const idx = Math.min(y * 12, sim.values.length - 1);
-      const totaal = sim.values[idx];
-      const inleg = sim.inlegLine[idx];
-      const rend = totaal - inleg;
-      rows.push({ year:y, totaal, inleg, rend });
+    const depletion = document.getElementById("depletion");
+    depletion.classList.toggle("empty", Boolean(sim.depletedAt));
+    if (sim.depletedAt) {
+      const withdrawalYear = Math.floor((sim.depletedAt.withdrawalMonth - 1) / 12) + 1;
+      const withdrawalMonth = ((sim.depletedAt.withdrawalMonth - 1) % 12) + 1;
+      const totalYear = Math.floor((sim.depletedAt.totalMonth - 1) / 12) + 1;
+      const totalMonth = ((sim.depletedAt.totalMonth - 1) % 12) + 1;
+      depletion.textContent = `Vermogen raakt op in opnamejaar ${withdrawalYear}, maand ${withdrawalMonth} (totaal jaar ${totalYear}, maand ${totalMonth}).`;
+    } else if (sim.withdrawalMonths > 0) {
+      depletion.textContent = "Vermogen raakt niet op binnen de gekozen opnameperiode.";
+    } else {
+      depletion.textContent = "Geen opnamefase ingesteld.";
     }
 
-    let html = "<tr><th>Jaar</th><th>Totaal</th><th>Inleg</th><th>Rendement</th><th>% groei</th></tr>";
-    for (const row of rows) {
-      const growthPct = row.inleg > 0 ? ((row.rend / row.inleg) * 100).toFixed(1).replace(".", ",") + "%" : "-";
-      html += `<tr><td>${row.year === 0 ? "Nu" : row.year}</td><td>${fmt(row.totaal)}</td><td>${fmt(row.inleg)}</td><td>${fmt(row.rend)}</td><td>${growthPct}</td></tr>`;
+    renderYieldSummary(input.currentTotal, input.buildReturn);
+    drawChart(document.getElementById("chart"), sim);
+    renderTimeline(sim, input.currentTotal);
+
+    let html = "<tr><th>Jaar</th><th>Fase</th><th>Begin</th><th>Inleg</th><th>Opname</th><th>Rendement</th><th>Einde</th></tr>";
+    html += `<tr><td>Nu</td><td>Huidig</td><td>${fmt(input.currentTotal)}</td><td>${fmt(0)}</td><td>${fmt(0)}</td><td>${fmt(input.currentReturn)}</td><td>${fmt(input.currentTotal)}</td></tr>`;
+    for (const row of sim.annualRows) {
+      html += `<tr><td>${row.year}</td><td>${row.phase}</td><td>${fmt(row.start)}</td><td>${fmt(row.contribution)}</td><td>${fmt(row.withdrawal)}</td><td>${fmt(row.returnAmount)}</td><td>${fmt(row.end)}</td></tr>`;
     }
     document.getElementById("table").innerHTML = html;
 
-    if (inflYear > 0.06) {
-      note.textContent = "Let op: je inflatie/inleggroei is vrij hoog. Dat maakt je eindbedrag veel groter, maar ook je maandinleg later veel zwaarder.";
+    if (input.inflation > 0.06) {
+      note.textContent = "Let op: de gekozen inflatie is vrij hoog. Dat kan zowel toekomstige inleg als geïndexeerde opnames sterk verhogen.";
     }
 
     saveInputs();
@@ -585,7 +778,7 @@
     note.textContent = "";
     goalResult.textContent = "";
 
-    const {start, currentReturn, monthly0, rYear, inflYear} = getInputs();
+    const input = getInputs();
     const goalAmount = Number(document.getElementById("goalAmount").value || 0);
     const goalMonthsRaw = Number(document.getElementById("goalMonths").value || 0);
     const goalMonths = Math.max(0, Math.floor(goalMonthsRaw));
@@ -601,8 +794,13 @@
       let hi = 8000;
       for (let iter = 0; iter < 44; iter++) {
         const mid = (lo + hi) / 2;
-        const sim = simulate({start, currentReturn, monthly0, rYear, inflYear, years:1, overrideMonthly:mid, monthsOverride:goalMonths});
-        const end = sim.values[sim.values.length - 1];
+        const end = simulateGoal({
+          currentTotal: input.currentTotal,
+          monthly: mid,
+          rYear: input.buildReturn,
+          inflation: input.inflation,
+          months: goalMonths,
+        });
         if (end >= goalAmount) hi = mid; else lo = mid;
       }
       const needed = Math.ceil(hi / 5) * 5;
@@ -616,12 +814,18 @@
       let hi = 300000;
       for (let iter = 0; iter < 44; iter++) {
         const mid = (lo + hi) / 2;
-        const sim = simulate({start, currentReturn, monthly0, rYear, inflYear, years:1, lump:mid, monthsOverride:goalMonths});
-        const end = sim.values[sim.values.length - 1];
+        const end = simulateGoal({
+          currentTotal: input.currentTotal,
+          monthly: input.monthlyContribution,
+          rYear: input.buildReturn,
+          inflation: input.inflation,
+          months: goalMonths,
+          lump: mid,
+        });
         if (end >= goalAmount) hi = mid; else lo = mid;
       }
       const needed = Math.ceil(hi / 10) * 10;
-      goalResult.textContent = `Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer een eenmalige storting van ${fmt(needed)} nodig (bovenop ${fmt(monthly0)} p/m).`;
+      goalResult.textContent = `Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer een eenmalige storting van ${fmt(needed)} nodig (bovenop ${fmt(input.monthlyContribution)} p/m).`;
       saveInputs();
     }
   }
@@ -654,7 +858,7 @@
     });
   }
 
-  for (const id of ["monthly", "r", "infl", "contribYears", "years", "goalAmount", "goalMonths", "goalMode"]) {
+  for (const id of ["buildYears", "monthly", "r", "infl", "withdrawal", "withdrawalYears", "withdrawalReturn", "stopContribution", "inflateWithdrawal", "goalAmount", "goalMonths", "goalMode"]) {
     const el = document.getElementById(id);
     el.addEventListener("input", saveInputs);
     el.addEventListener("change", saveInputs);
