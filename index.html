@@ -8,23 +8,29 @@
   <style>
     :root{color-scheme:dark;}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0b0f14;color:#e8eef6}
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
-    h1{margin:0 0 10px;font-size:18px}
+    .wrap{max-width:1100px;margin:0 auto;padding:12px}
+    h1{margin:0 0 8px;font-size:18px}
     .grid{display:grid;gap:12px;grid-template-columns:420px 1fr}
-    .card{background:#121a24;border:1px solid #223043;border-radius:16px;padding:14px}
-    .inputs{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+    .card{background:#121a24;border:1px solid #223043;border-radius:16px;padding:12px}
+    .inputs{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+    .inputs.three{grid-template-columns:repeat(3,minmax(0,1fr))}
     .inputs .full{grid-column:1/-1}
-    label{display:block;font-size:12px;opacity:.85;margin:2px 0 6px}
-    input, select{width:100%;box-sizing:border-box;padding:12px 12px;border-radius:12px;border:1px solid #2a3a52;background:#0b111a;color:#e8eef6;font-size:15px}
+    .inputs>div{display:flex;flex-direction:column}
+    .inputs input,.inputs select{margin-top:auto}
+    label{display:block;font-size:11px;opacity:.85;margin:0 0 4px}
+    input, select{width:100%;box-sizing:border-box;padding:9px 10px;border-radius:10px;border:1px solid #2a3a52;background:#0b111a;color:#e8eef6;font-size:14px}
     input[type="checkbox"]{width:18px;height:18px;margin:0;accent-color:#2b7cff;flex:0 0 auto}
     button{width:100%;padding:12px;border-radius:12px;border:0;background:#2b7cff;color:#fff;font-weight:800;cursor:pointer}
     button:active{transform:scale(.99)}
-    .kpis{display:grid;gap:10px;grid-template-columns:repeat(3, minmax(0, 1fr))}
+    .kpis{display:grid;gap:8px;grid-template-columns:repeat(3, minmax(0, 1fr))}
     .kpis.four{grid-template-columns:repeat(4, minmax(0, 1fr))}
-    .kpis.six{grid-template-columns:repeat(3, minmax(0, 1fr))}
-    .kpi{background:#0b111a;border:1px solid #223043;border-radius:14px;padding:12px}
-    .kpi .t{font-size:12px;opacity:.85}
+    .kpis.six{grid-template-columns:repeat(4, minmax(0, 1fr))}
+    .kpis.six .primary{grid-column:span 2}
+    .kpi{background:#0b111a;border:1px solid #223043;border-radius:12px;padding:10px}
+    .kpi .t{font-size:11px;opacity:.8}
     .kpi .v{font-size:18px;font-weight:900;margin-top:4px}
+    .kpis.six .primary .v{font-size:21px}
+    .kpis.six .secondary .v{font-size:15px}
     table{width:100%;border-collapse:collapse;font-size:14px}
     th,td{padding:10px 8px;border-bottom:1px solid #223043;text-align:right}
     th{font-size:12px;opacity:.85}
@@ -32,41 +38,95 @@
     .pill{display:inline-block;padding:5px 10px;border-radius:999px;background:#0b111a;border:1px solid #223043;font-size:12px;opacity:.9}
     .muted{opacity:.8;font-size:12px;line-height:1.35}
     .row{display:flex;gap:8px;flex-wrap:wrap}
-    .chip{padding:10px 12px;border-radius:999px;border:1px solid #223043;background:#0b111a;color:#e8eef6;font-weight:800;cursor:pointer}
-    .chip:active{transform:scale(.99)}
     .danger{color:#ffcf66}
-    .timeline{display:grid;gap:10px;margin:12px 0 2px}
-    .step{background:#0b111a;border:1px solid #223043;border-radius:14px;padding:10px}
-    .step .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-    .step .name{font-weight:900}
-    .step .meta{opacity:.85;font-size:12px}
-    .bar{height:10px;border-radius:999px;background:#121a24;border:1px solid #223043;margin-top:10px;overflow:hidden}
+    .compactHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .autoStatus{font-size:11px;color:#a7ffb2;font-weight:800}
+    .inputGroup{padding:9px 0;border-top:1px solid #223043}
+    .compactHeader+.inputGroup{border-top:0;padding-top:0}
+    .inputGroupTitle{margin:0 0 7px;font-size:12px;font-weight:900}
+    .optionGrid{display:grid;grid-template-columns:104px 1fr 1fr;gap:8px;align-items:stretch}
+    .optionGrid .checkRow{height:100%;box-sizing:border-box;margin:0}
+    .goalResult{margin:8px 0 0;padding:9px 10px;border-radius:10px;background:#0b111a;border:1px solid #223043;font-size:12px;font-weight:800;line-height:1.35}
+    .timeline{display:block;margin:8px 0 2px;background:#0b111a;border:1px solid #223043;border-radius:14px;overflow:hidden}
+    .step{padding:9px 11px;border-bottom:1px solid #223043}
+    .step:last-child{border-bottom:0}
+    .step .top{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:10px}
+    .step .name{font-size:14px;font-weight:900}
+    .step.done .name,.step.done .meta{color:#a7ffb2}
+    .step .note{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.7;font-size:11px}
+    .step .meta{opacity:.85;font-size:11px;white-space:nowrap}
+    .bar{height:4px;border-radius:999px;background:#182436;margin-top:6px;overflow:hidden}
     .fill{height:100%;width:0%}
     canvas{width:100%;height:260px;background:#0b111a;border:1px solid #223043;border-radius:14px}
-    .sectionTitle{margin:14px 0 8px;font-size:14px}
+    .sectionTitle{margin:10px 0 7px;font-size:14px}
     .sectionToggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
     .sectionToggle .label{font-size:14px;font-weight:700}
     .sectionToggle .icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid #223043;border-radius:999px;background:#0b111a;font-size:14px;line-height:1;flex:0 0 auto}
     .sectionBody.hidden{display:none}
-    .checkRow{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid #2a3a52;border-radius:12px;background:#0b111a;cursor:pointer}
-    .checkRow span{font-size:13px;line-height:1.3}
+    .checkRow{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid #2a3a52;border-radius:10px;background:#0b111a;cursor:pointer}
+    .checkRow span{font-size:11px;line-height:1.25}
     .phaseLegend{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 8px;font-size:12px;opacity:.9}
     .phaseLegend span{display:inline-flex;align-items:center;gap:6px}
     .phaseLegend i{display:inline-block;width:18px;height:4px;border-radius:99px}
     .phaseLegend .build{background:#2b7cff}
     .phaseLegend .withdraw{background:#ffb84d}
-    .depletion{margin:10px 0 0;padding:10px 12px;border:1px solid #3b4657;border-radius:12px;background:#0b111a;font-size:13px;font-weight:800}
+    .phaseControl{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+    .phaseControl .phaseLegend{margin:0}
+    .phaseDragStatus{padding:5px 9px;border-radius:999px;background:#0b111a;border:1px solid #3b4657;font-size:11px;font-weight:800}
+    .phaseDragHint{margin:0 0 8px;font-size:12px;opacity:.78}
+    #chart{cursor:ew-resize;touch-action:pan-y}
+    .depletion{margin:8px 0 0;padding:8px 10px;border:1px solid #3b4657;border-radius:10px;background:#0b111a;font-size:12px;font-weight:800}
     .depletion.empty{border-color:#80592a;color:#ffcf88}
+    .yearNavigator{background:#0b111a;border:1px solid #223043;border-radius:14px;padding:14px}
+    .yearHeading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .yearEyebrow{display:block;font-size:12px;opacity:.72;margin-bottom:3px}
+    .yearTitle{font-size:20px;font-weight:900}
+    .phaseBadge{padding:6px 10px;border-radius:999px;border:1px solid #3b4657;font-size:12px;font-weight:800}
+    .phaseBadge.build{border-color:#2b7cff;color:#8fbcff;background:rgba(43,124,255,.1)}
+    .phaseBadge.withdraw{border-color:#b87827;color:#ffcf88;background:rgba(255,184,77,.1)}
+    .yearSlider{--phase-pct:100%;appearance:none;width:100%;height:8px;margin:22px 0 8px;padding:0;border:0;border-radius:999px;background:linear-gradient(to right,#2b7cff 0 var(--phase-pct),#ffb84d var(--phase-pct) 100%);cursor:pointer}
+    .yearSlider::-webkit-slider-thumb{appearance:none;width:22px;height:22px;border-radius:50%;border:3px solid #e8eef6;background:#121a24;box-shadow:0 0 0 3px rgba(43,124,255,.35)}
+    .yearSlider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;border:3px solid #e8eef6;background:#121a24;box-shadow:0 0 0 3px rgba(43,124,255,.35)}
+    .yearScale{display:flex;justify-content:space-between;gap:8px;font-size:11px;opacity:.75}
+    .yearScale span:nth-child(2){text-align:center;color:#ffcf88}
+    .yearScale span:last-child{text-align:right}
+    .yearAlert{margin:12px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,184,77,.1);color:#ffcf88;font-size:12px;font-weight:800}
+    .yearNavActions{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:14px}
+    .yearNavActions button{padding:9px 10px;background:#182436;border:1px solid #2a3a52}
+    .yearNavActions button:disabled{opacity:.35;cursor:not-allowed}
+    .yearPosition{font-size:12px;font-weight:800;white-space:nowrap;text-align:center}
+    .yearDetails{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}
+    .yearMetric{padding:10px;background:#121a24;border:1px solid #223043;border-radius:12px;min-width:0}
+    .yearMetric span{display:block;font-size:11px;opacity:.72;margin-bottom:4px}
+    .yearMetric strong{display:block;font-size:15px;overflow-wrap:anywhere}
+    .yearMetric.return strong{color:#a7ffb2}
+    .yearMetric.withdrawal strong{color:#ffcf88}
+    .fullYearTable{margin-top:12px;border-top:1px solid #223043;padding-top:12px}
+    .fullYearTable summary{cursor:pointer;font-size:13px;font-weight:800;color:#b9d2f7;list-style-position:inside}
+    .fullYearTable[open] summary{margin-bottom:10px}
     @media (max-width:980px){
       .grid{grid-template-columns:1fr}
       .kpis{grid-template-columns:1fr}
-      .kpis.four{grid-template-columns:repeat(2, minmax(0, 1fr))}
-      .kpis.six{grid-template-columns:repeat(2, minmax(0, 1fr))}
       canvas{height:240px}
     }
     @media (max-width:560px){
+      .wrap{padding:8px}
+      .card{padding:10px}
+      .inputs.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .optionGrid{grid-template-columns:1fr 1fr}
+      .optionGrid>div:first-child{grid-column:1/-1}
       .kpis.four{grid-template-columns:repeat(4, minmax(0, 1fr))}
+      .kpis.six{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .kpis.six .primary{grid-column:span 1}
       .kpi .v{font-size:15px}
+      .step .top{grid-template-columns:max-content minmax(0,1fr);gap:2px 8px}
+      .step .name{grid-column:1;grid-row:1}
+      .step .meta{grid-column:2;grid-row:1;text-align:right}
+      .step .note{grid-column:1/-1;grid-row:2}
+      .yearDetails{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .yearMetric:last-child{grid-column:1/-1}
+      .yearNavActions{grid-template-columns:1fr 1fr}
+      .yearPosition{grid-column:1/-1;grid-row:1}
     }
   </style>
 
@@ -84,76 +144,90 @@
 
     <div class="grid">
       <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span class="pill">Supersnel invullen</span>
-          <span class="pill">Maandelijks compounding</span>
+        <div class="compactHeader">
+          <span class="pill">Scenario</span>
+          <span class="autoStatus">Automatisch bijgewerkt</span>
         </div>
 
-        <div class="inputs">
-          <div>
-            <label>Huidig totaal (EUR)</label>
-            <input id="currentTotal" type="number" step="100" value="5000" />
+        <div class="inputGroup">
+          <h2 class="inputGroupTitle">Huidige situatie</h2>
+          <div class="inputs three">
+            <div>
+              <label>Huidig totaal (EUR)</label>
+              <input id="currentTotal" type="number" step="100" value="5000" />
+            </div>
+            <div>
+              <label>Rendement (EUR)</label>
+              <input id="currentReturn" type="number" step="100" value="0" />
+            </div>
+            <div>
+              <label>Inleg (EUR)</label>
+              <input id="start" type="number" step="100" value="5000" />
+            </div>
           </div>
-          <div>
-            <label>Huidig rendement (EUR)</label>
-            <input id="currentReturn" type="number" step="100" value="0" />
+        </div>
+
+        <div class="inputGroup">
+          <h2 class="inputGroupTitle">Opbouwfase</h2>
+          <div class="inputs three">
+            <div>
+              <label>Jaren</label>
+              <input id="buildYears" type="number" min="0" step="1" value="20" />
+            </div>
+            <div>
+              <label>Inleg per maand (EUR)</label>
+              <input id="monthly" type="number" step="25" value="325" />
+            </div>
+            <div>
+              <label>Rendement p/j (%)</label>
+              <input id="r" type="number" step="0.1" value="5" />
+            </div>
           </div>
-          <div>
-            <label>Huidige inleg (EUR)</label>
-            <input id="start" type="number" step="100" value="5000" />
+        </div>
+
+        <div class="inputGroup">
+          <h2 class="inputGroupTitle">Opnamefase</h2>
+          <div class="inputs three">
+            <div>
+              <label>Jaren</label>
+              <input id="withdrawalYears" type="number" min="0" step="1" value="20" />
+            </div>
+            <div>
+              <label>Opname p/m (EUR)</label>
+              <input id="withdrawal" type="number" min="0" step="25" value="200" />
+            </div>
+            <div>
+              <label>Rendement p/j (%)</label>
+              <input id="withdrawalReturn" type="number" step="0.1" value="4" />
+            </div>
           </div>
-          <div>
-            <label>Aantal jaren opbouwen</label>
-            <input id="buildYears" type="number" min="0" step="1" value="20" />
-          </div>
-          <div>
-            <label>Maandelijkse inleg tijdens opbouw (EUR)</label>
-            <input id="monthly" type="number" step="25" value="325" />
-          </div>
-          <div>
-            <label>Jaarlijks rendement tijdens opbouw (%)</label>
-            <input id="r" type="number" step="0.1" value="5" />
-          </div>
-          <div>
-            <label>Inflatie / jaarlijkse verhoging (%)</label>
-            <input id="infl" type="number" step="0.1" value="2" />
-          </div>
-          <div>
-            <label>Maandelijkse opname na opbouw (EUR)</label>
-            <input id="withdrawal" type="number" min="0" step="25" value="200" />
-          </div>
-          <div>
-            <label>Aantal jaren opnemen</label>
-            <input id="withdrawalYears" type="number" min="0" step="1" value="20" />
-          </div>
-          <div>
-            <label>Jaarlijks rendement tijdens opname (%)</label>
-            <input id="withdrawalReturn" type="number" step="0.1" value="4" />
-          </div>
-          <div class="full inputs">
+        </div>
+
+        <div class="inputGroup">
+          <h2 class="inputGroupTitle">Extra instellingen</h2>
+          <div class="optionGrid">
+            <div>
+              <label>Inflatie p/j (%)</label>
+              <input id="infl" type="number" step="0.1" value="2" />
+            </div>
             <label class="checkRow">
               <input id="stopContribution" type="checkbox" checked />
-              <span>Maandelijkse inleg stopt zodra de opnamefase begint</span>
+              <span>Inleg stopt bij opnamefase</span>
             </label>
             <label class="checkRow">
               <input id="inflateWithdrawal" type="checkbox" />
-              <span>Maandelijkse opname stijgt jaarlijks mee met inflatie</span>
+              <span>Opname stijgt mee met inflatie</span>
             </label>
           </div>
         </div>
 
-        <div class="row" style="margin-top:10px">
-          <button id="calc">Bereken</button>
-          <button id="share" class="chip" style="flex:1">Deel/opslaan als link</button>
-        </div>
-
         <h3 class="sectionTitle">
-          <button type="button" class="sectionToggle" data-target="goalSection" aria-expanded="true">
+          <button type="button" class="sectionToggle" data-target="goalSection" aria-expanded="false">
             <span class="label">Doel-modus</span>
-            <span class="icon" aria-hidden="true">-</span>
+            <span class="icon" aria-hidden="true">+</span>
           </button>
         </h3>
-        <div id="goalSection" class="sectionBody">
+        <div id="goalSection" class="sectionBody hidden">
           <div class="inputs">
             <div>
               <label>Doelbedrag (EUR)</label>
@@ -171,45 +245,38 @@
               </select>
             </div>
           </div>
-          <div class="row" style="margin-top:10px">
-            <button id="solveGoal" class="chip" style="flex:1">Bereken doel</button>
-          </div>
-
-          <p class="muted" id="goalResult" style="margin:10px 0 0; font-weight:800"></p>
-          <p class="muted" style="margin:10px 0 0">
-            Tip: doel-modus is ideaal voor "EUR 10k in 10,5 maanden"-vragen.
-          </p>
+          <p class="goalResult" id="goalResult"></p>
         </div>
       </div>
 
       <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
           <span class="pill">Resultaten</span>
           <span class="pill" id="mode">nominaal</span>
         </div>
 
         <div class="kpis six">
-          <div class="kpi">
+          <div class="kpi primary">
             <div class="t">Na opbouwfase</div>
             <div class="v" id="end">–</div>
           </div>
-          <div class="kpi">
+          <div class="kpi primary">
             <div class="t">Na opnamefase</div>
             <div class="v" id="inleg">–</div>
           </div>
-          <div class="kpi">
+          <div class="kpi secondary">
             <div class="t">Totaal ingelegd</div>
             <div class="v" id="rendement">–</div>
           </div>
-          <div class="kpi">
+          <div class="kpi secondary">
             <div class="t">Totaal opgenomen</div>
             <div class="v" id="totalWithdrawn">-</div>
           </div>
-          <div class="kpi">
+          <div class="kpi secondary">
             <div class="t">Totaal rendement</div>
             <div class="v" id="totalReturn">-</div>
           </div>
-          <div class="kpi">
+          <div class="kpi secondary">
             <div class="t">Totale looptijd</div>
             <div class="v" id="totalDuration">-</div>
           </div>
@@ -250,10 +317,14 @@
           </button>
         </h3>
         <div id="chartSection" class="sectionBody">
-          <div class="phaseLegend">
-            <span><i class="build"></i>Opbouwfase</span>
-            <span><i class="withdraw"></i>Opnamefase</span>
+          <div class="phaseControl">
+            <div class="phaseLegend">
+              <span><i class="build"></i>Opbouwfase</span>
+              <span><i class="withdraw"></i>Opnamefase</span>
+            </div>
+            <span class="phaseDragStatus" id="phaseDragStatus"></span>
           </div>
+          <p class="phaseDragHint">Sleep de ronde knop of tik in de grafiek om de fases te verdelen.</p>
           <canvas id="chart" width="1100" height="260"></canvas>
         </div>
 
@@ -274,7 +345,38 @@
           </button>
         </h3>
         <div id="tableSection" class="sectionBody">
-          <div style="overflow-x:auto"><table id="table"></table></div>
+          <div class="yearNavigator">
+            <div class="yearHeading">
+              <div>
+                <span class="yearEyebrow">Geselecteerd moment</span>
+                <div class="yearTitle" id="selectedYearLabel">Nu</div>
+              </div>
+              <span class="phaseBadge" id="selectedPhase">Huidig</span>
+            </div>
+            <input class="yearSlider" id="yearSlider" type="range" min="0" max="1" value="0" step="1" aria-label="Kies een jaar uit het overzicht" />
+            <div class="yearScale">
+              <span>Nu</span>
+              <span id="withdrawalStartLabel"></span>
+              <span id="lastYearLabel"></span>
+            </div>
+            <div class="yearAlert" id="yearAlert" hidden></div>
+            <div class="yearNavActions">
+              <button type="button" id="previousYear">Vorig jaar</button>
+              <span class="yearPosition" id="yearPosition"></span>
+              <button type="button" id="nextYear">Volgend jaar</button>
+            </div>
+            <div class="yearDetails">
+              <div class="yearMetric"><span>Beginvermogen</span><strong id="yearStart">-</strong></div>
+              <div class="yearMetric"><span>Inleg</span><strong id="yearContribution">-</strong></div>
+              <div class="yearMetric withdrawal"><span>Opname</span><strong id="yearWithdrawal">-</strong></div>
+              <div class="yearMetric return"><span>Rendement</span><strong id="yearReturn">-</strong></div>
+              <div class="yearMetric"><span>Eindvermogen</span><strong id="yearEnd">-</strong></div>
+            </div>
+          </div>
+          <details class="fullYearTable">
+            <summary>Volledige tabel tonen</summary>
+            <div style="overflow-x:auto"><table id="table"></table></div>
+          </details>
         </div>
 
         <p class="muted danger" id="note"></p>
@@ -481,43 +583,6 @@
     if (q.has("iw")) document.getElementById("inflateWithdrawal").checked = q.get("iw") === "1";
   }
 
-  function makeShareLink() {
-    const input = getInputs();
-    const q = new URLSearchParams();
-    q.set("start", Math.round(input.currentContribution));
-    q.set("cr", Math.round(input.currentReturn));
-    q.set("ct", Math.round(input.currentTotal));
-    q.set("by", Math.round(input.buildYears));
-    q.set("m", Math.round(input.monthlyContribution));
-    q.set("r", (input.buildReturn * 100).toFixed(2));
-    q.set("i", (input.inflation * 100).toFixed(2));
-    q.set("w", Math.round(input.monthlyWithdrawal));
-    q.set("wy", Math.round(input.withdrawalYears));
-    q.set("wr", (input.withdrawalReturn * 100).toFixed(2));
-    q.set("sc", input.stopContribution ? "1" : "0");
-    q.set("iw", input.inflateWithdrawal ? "1" : "0");
-    return location.origin + location.pathname + "?" + q.toString();
-  }
-
-  async function share() {
-    const url = makeShareLink();
-    try {
-      if (navigator.share) {
-        await navigator.share({ title:"Beleggingsplanner", text:"Mijn beleggingsscenario", url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        alert("Link gekopieerd naar klembord!");
-      }
-    } catch (e) {
-      try {
-        await navigator.clipboard.writeText(url);
-        alert("Link gekopieerd naar klembord!");
-      } catch (_) {
-        alert(url);
-      }
-    }
-  }
-
   function drawChart(canvas, sim) {
     const ctx = canvas.getContext("2d");
     const W = canvas.width;
@@ -541,6 +606,7 @@
     const y = (v) => padT + (1 - (v - minV) / (maxV - minV)) * h;
 
     const phaseX = x(Math.min(sim.buildMonths, n - 1));
+    canvas.phaseDragGeometry = { padL, plotWidth:w, phaseX, totalMonths:sim.totalMonths };
     ctx.fillStyle = "rgba(43,124,255,.06)";
     ctx.fillRect(padL, padT, Math.max(0, phaseX - padL), h);
     if (sim.withdrawalMonths > 0) {
@@ -621,14 +687,32 @@
     drawPhase(0, Math.min(sim.buildMonths, n - 1), "#2b7cff");
     if (sim.withdrawalMonths > 0) {
       drawPhase(Math.min(sim.buildMonths, n - 1), n - 1, "#ffb84d");
+    }
+    if (sim.totalMonths > 0) {
       ctx.strokeStyle = "rgba(255,184,77,.7)";
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 2;
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
       ctx.moveTo(phaseX, padT);
       ctx.lineTo(phaseX, padT + h);
       ctx.stroke();
       ctx.setLineDash([]);
+
+      const scaleX = canvas.clientWidth / W || 1;
+      const scaleY = canvas.clientHeight / H || 1;
+      const handleRadiusX = 8 / scaleX;
+      const handleRadiusY = 8 / scaleY;
+      const handleX = Math.max(padL + handleRadiusX, Math.min(padL + w - handleRadiusX, phaseX));
+
+      ctx.fillStyle = "#ffb84d";
+      ctx.beginPath();
+      ctx.ellipse(handleX, padT + 12, handleRadiusX, handleRadiusY, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#e8eef6";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(handleX, padT + 12, handleRadiusX, handleRadiusY, 0, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
   }
@@ -667,13 +751,13 @@
       const pct = Math.max(0, Math.min(100, (currentNow / s.target) * 100));
 
       const div = document.createElement("div");
-      div.className = "step";
+      div.className = `step${done ? " done" : ""}`;
       div.innerHTML = `
         <div class="top">
-          <div class="name">${done ? "[klaar] " : ""}${s.name}</div>
-          <div class="meta">${done ? "gehaald" : "na " + monthToText(m)}</div>
+          <div class="name">${s.name}</div>
+          <div class="note">${s.note}</div>
+          <div class="meta">${done ? "Gehaald" : "na " + monthToText(m)}</div>
         </div>
-        <div class="meta" style="margin-top:6px">${s.note}</div>
         <div class="bar"><div class="fill" style="width:${pct}%; background:${done ? "#a7ffb2" : "#2b7cff"}"></div></div>
       `;
       container.appendChild(div);
@@ -689,6 +773,78 @@
   }
 
   let currentAmountSource = "total";
+  let selectedYearIndex = 0;
+  let yearOverviewRows = [];
+
+  function updateSelectedYear() {
+    if (!yearOverviewRows.length) return;
+
+    const slider = document.getElementById("yearSlider");
+    selectedYearIndex = Math.max(0, Math.min(yearOverviewRows.length - 1, selectedYearIndex));
+    slider.value = selectedYearIndex;
+
+    const row = yearOverviewRows[selectedYearIndex];
+    const label = selectedYearIndex === 0 ? "Nu" : `Jaar ${row.year}`;
+    const phaseClass = row.phase === "Opbouw" ? "build" : row.phase === "Opname" ? "withdraw" : "";
+    const phase = document.getElementById("selectedPhase");
+
+    document.getElementById("selectedYearLabel").textContent = label;
+    phase.textContent = row.phase;
+    phase.className = `phaseBadge ${phaseClass}`.trim();
+    document.getElementById("yearPosition").textContent = selectedYearIndex === 0
+      ? `Nu van ${yearOverviewRows.length - 1} jaar`
+      : `Jaar ${row.year} van ${yearOverviewRows.length - 1}`;
+    document.getElementById("yearStart").textContent = fmt(row.start);
+    document.getElementById("yearContribution").textContent = fmt(row.contribution);
+    document.getElementById("yearWithdrawal").textContent = fmt(row.withdrawal);
+    document.getElementById("yearReturn").textContent = fmt(row.returnAmount);
+    document.getElementById("yearEnd").textContent = fmt(row.end);
+    document.getElementById("previousYear").disabled = selectedYearIndex === 0;
+    document.getElementById("nextYear").disabled = selectedYearIndex === yearOverviewRows.length - 1;
+    slider.setAttribute("aria-valuetext", `${label}, ${row.phase}`);
+  }
+
+  function renderYearOverview(sim, input) {
+    yearOverviewRows = [
+      {
+        year: 0,
+        phase: "Huidig",
+        start: input.currentTotal,
+        contribution: 0,
+        withdrawal: 0,
+        returnAmount: input.currentReturn,
+        end: input.currentTotal,
+      },
+      ...sim.annualRows,
+    ];
+
+    const slider = document.getElementById("yearSlider");
+    const finalRow = sim.annualRows[sim.annualRows.length - 1];
+    const finalYear = finalRow ? finalRow.year : 0;
+    const firstWithdrawalYear = sim.annualRows.find((row) => row.phase === "Opname")?.year;
+    const phasePercentage = sim.withdrawalMonths > 0 && sim.totalMonths > 0
+      ? (sim.buildMonths / sim.totalMonths) * 100
+      : 100;
+
+    slider.max = Math.max(0, yearOverviewRows.length - 1);
+    slider.style.setProperty("--phase-pct", `${phasePercentage}%`);
+    document.getElementById("lastYearLabel").textContent = finalYear > 0 ? `Jaar ${finalYear}` : "Nu";
+    document.getElementById("withdrawalStartLabel").textContent = firstWithdrawalYear
+      ? `Opname vanaf jaar ${firstWithdrawalYear}`
+      : "Alleen opbouw";
+
+    const alert = document.getElementById("yearAlert");
+    if (sim.depletedAt) {
+      const depletedYear = Math.ceil(sim.depletedAt.totalMonth / 12);
+      alert.textContent = `Vermogen raakt op in jaar ${depletedYear}.`;
+      alert.hidden = false;
+    } else {
+      alert.hidden = true;
+      alert.textContent = "";
+    }
+
+    updateSelectedYear();
+  }
 
   function syncCurrentAmounts(source = currentAmountSource) {
     const startEl = document.getElementById("start");
@@ -755,6 +911,7 @@
     }
 
     renderYieldSummary(input.currentTotal, input.buildReturn);
+    document.getElementById("phaseDragStatus").textContent = `${input.buildYears} jaar opbouwen · ${input.withdrawalYears} jaar opnemen`;
     drawChart(document.getElementById("chart"), sim);
     renderTimeline(sim, input.currentTotal);
 
@@ -764,18 +921,18 @@
       html += `<tr><td>${row.year}</td><td>${row.phase}</td><td>${fmt(row.start)}</td><td>${fmt(row.contribution)}</td><td>${fmt(row.withdrawal)}</td><td>${fmt(row.returnAmount)}</td><td>${fmt(row.end)}</td></tr>`;
     }
     document.getElementById("table").innerHTML = html;
+    renderYearOverview(sim, input);
 
     if (input.inflation > 0.06) {
       note.textContent = "Let op: de gekozen inflatie is vrij hoog. Dat kan zowel toekomstige inleg als geïndexeerde opnames sterk verhogen.";
     }
 
+    solveGoal();
     saveInputs();
   }
 
   function solveGoal() {
-    const note = document.getElementById("note");
     const goalResult = document.getElementById("goalResult");
-    note.textContent = "";
     goalResult.textContent = "";
 
     const input = getInputs();
@@ -805,7 +962,6 @@
       }
       const needed = Math.ceil(hi / 5) * 5;
       goalResult.textContent = `Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer ${fmt(needed)} per maand nodig.`;
-      saveInputs();
       return;
     }
 
@@ -826,13 +982,71 @@
       }
       const needed = Math.ceil(hi / 10) * 10;
       goalResult.textContent = `Doel-modus: om ${fmt(goalAmount)} te halen in ${goalMonths} maanden heb je ongeveer een eenmalige storting van ${fmt(needed)} nodig (bovenop ${fmt(input.monthlyContribution)} p/m).`;
-      saveInputs();
     }
   }
 
-  document.getElementById("calc").addEventListener("click", render);
-  document.getElementById("share").addEventListener("click", share);
-  document.getElementById("solveGoal").addEventListener("click", solveGoal);
+  document.getElementById("yearSlider").addEventListener("input", (event) => {
+    selectedYearIndex = Number(event.target.value);
+    updateSelectedYear();
+  });
+  document.getElementById("previousYear").addEventListener("click", () => {
+    selectedYearIndex -= 1;
+    updateSelectedYear();
+  });
+  document.getElementById("nextYear").addEventListener("click", () => {
+    selectedYearIndex += 1;
+    updateSelectedYear();
+  });
+
+  const chart = document.getElementById("chart");
+  let phaseDragPointer = null;
+  let phaseDragTotalYears = 0;
+
+  function updatePhaseFromPointer(event) {
+    const geometry = chart.phaseDragGeometry;
+    if (!geometry || phaseDragTotalYears <= 0) return;
+
+    const rect = chart.getBoundingClientRect();
+    const canvasX = (event.clientX - rect.left) * (chart.width / rect.width);
+    const fraction = Math.max(0, Math.min(1, (canvasX - geometry.padL) / geometry.plotWidth));
+    const buildYears = Math.round(fraction * phaseDragTotalYears);
+    const withdrawalYears = phaseDragTotalYears - buildYears;
+    const buildInput = document.getElementById("buildYears");
+    const withdrawalInput = document.getElementById("withdrawalYears");
+
+    if (Number(buildInput.value) === buildYears && Number(withdrawalInput.value) === withdrawalYears) return;
+    buildInput.value = buildYears;
+    withdrawalInput.value = withdrawalYears;
+    render();
+  }
+
+  chart.addEventListener("pointerdown", (event) => {
+    const totalYears = Number(document.getElementById("buildYears").value || 0)
+      + Number(document.getElementById("withdrawalYears").value || 0);
+    phaseDragTotalYears = Math.max(0, Math.round(totalYears));
+    if (phaseDragTotalYears <= 0) return;
+
+    phaseDragPointer = event.pointerId;
+    chart.setPointerCapture(event.pointerId);
+    updatePhaseFromPointer(event);
+    event.preventDefault();
+  });
+
+  chart.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== phaseDragPointer) return;
+    updatePhaseFromPointer(event);
+    event.preventDefault();
+  });
+
+  function finishPhaseDrag(event) {
+    if (event.pointerId !== phaseDragPointer) return;
+    updatePhaseFromPointer(event);
+    phaseDragPointer = null;
+    phaseDragTotalYears = 0;
+  }
+
+  chart.addEventListener("pointerup", finishPhaseDrag);
+  chart.addEventListener("pointercancel", finishPhaseDrag);
 
   for (const btn of document.querySelectorAll(".sectionToggle")) {
     btn.addEventListener("click", () => {
@@ -848,20 +1062,28 @@
     el.addEventListener("input", () => {
       currentAmountSource = id === "currentTotal" ? "total" : id === "currentReturn" ? "return" : "start";
       syncCurrentAmounts(currentAmountSource);
-      saveInputs();
       render();
     });
     el.addEventListener("change", () => {
       syncCurrentAmounts(currentAmountSource);
-      saveInputs();
       render();
     });
   }
 
-  for (const id of ["buildYears", "monthly", "r", "infl", "withdrawal", "withdrawalYears", "withdrawalReturn", "stopContribution", "inflateWithdrawal", "goalAmount", "goalMonths", "goalMode"]) {
+  for (const id of ["buildYears", "monthly", "r", "infl", "withdrawal", "withdrawalYears", "withdrawalReturn", "stopContribution", "inflateWithdrawal"]) {
     const el = document.getElementById(id);
-    el.addEventListener("input", saveInputs);
-    el.addEventListener("change", saveInputs);
+    el.addEventListener("input", render);
+    el.addEventListener("change", render);
+  }
+
+  for (const id of ["goalAmount", "goalMonths", "goalMode"]) {
+    const el = document.getElementById(id);
+    const updateGoal = () => {
+      solveGoal();
+      saveInputs();
+    };
+    el.addEventListener("input", updateGoal);
+    el.addEventListener("change", updateGoal);
   }
 
   window.addEventListener("load", () => {
